@@ -1,21 +1,32 @@
 package com.blackhoodie.puyopuyo;
 
+import android.graphics.Canvas;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 abstract class Level{
+
+    private String name;
 
     private List<Actor> actors;
     private List<Actor> pendingActors;
     private boolean updatingActors;
 
-    public Level(){
+    private List<DrawableComponent> drawables;
+
+    public Level(String name){
+        this.name = name;
+
         actors = new ArrayList<Actor>();
         pendingActors = new ArrayList<Actor>();
         updatingActors = false;
-    }
 
-    abstract void initialize();
+        drawables = new ArrayList<DrawableComponent>();
+
+        initialize();
+    }
 
     public void addActor(Actor actor){
         if(updatingActors){
@@ -26,9 +37,22 @@ abstract class Level{
         }
     }
 
-    public void removeActor(){
-
+    public void removeActor(Actor actor){
+        if(actors.contains(actor)){
+            actors.remove(actor);
+        }
     }
+
+    public void addDrawable(DrawableComponent drawable){
+        drawables.add(drawable);
+        Collections.sort(drawables, (drawable1, drawable2) -> drawable1.getDrawOrder() - drawable2.getDrawOrder());
+    }
+
+    public void removeDrawable(DrawableComponent drawable){
+        drawables.remove(drawable);
+    }
+
+    abstract void initialize();
 
     public void update(){
         updatingActors = true;
@@ -41,6 +65,27 @@ abstract class Level{
             actors.add(actor);
         }
         pendingActors.clear();
+
+        List<Actor> deletedActors = new ArrayList<Actor>();
+        for(Actor actor : actors){
+            if(actor.getState() == Actor.State.Deleted){
+                deletedActors.add(actor);
+            }
+        }
+
+        for(Actor actor : deletedActors){
+            actor = null;
+        }
+    }
+
+    public void render(Canvas canvas){
+        for(DrawableComponent drawable : drawables){
+            drawable.draw(canvas);
+        }
+    }
+
+    public String getName(){
+        return name;
     }
 
 }

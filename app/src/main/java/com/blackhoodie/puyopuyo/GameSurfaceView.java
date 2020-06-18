@@ -2,18 +2,20 @@ package com.blackhoodie.puyopuyo;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 public class GameSurfaceView extends SurfaceView implements SurfaceHolder.Callback, Runnable{
 
-    Thread thread;
+    private Thread thread;
 
     public GameSurfaceView(Context context){
         super(context);
         getHolder().addCallback(this);
+
+        Game.createInstance();
+        Game.getInstance().setContext(context);
+        Game.getInstance().initialize();
     }
 
     @Override
@@ -42,15 +44,17 @@ public class GameSurfaceView extends SurfaceView implements SurfaceHolder.Callba
                 exception.printStackTrace();
             }
 
-            draw(getHolder());
+            render(getHolder());
         }
     }
 
-    private void draw(SurfaceHolder surfaceHolder){
+    private void render(SurfaceHolder surfaceHolder){
         Canvas canvas = surfaceHolder.lockCanvas();
         if(canvas == null){
             return;
         }
+
+        Game.getInstance().render(canvas);
 
         surfaceHolder.unlockCanvasAndPost(canvas);
     }

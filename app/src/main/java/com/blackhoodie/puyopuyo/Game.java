@@ -1,11 +1,15 @@
 package com.blackhoodie.puyopuyo;
 
-import java.util.ArrayList;
-import java.util.List;
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
+
+import java.util.HashMap;
 
 public class Game{
 
-    private static final Game instance = new Game();
+    private static Game instance;
+    private Context context;
 
     private boolean paused;
 
@@ -15,17 +19,33 @@ public class Game{
     private long sleepTime;
     private float framePerSecond;
 
-    private List<Level> levels;
+    private HashMap<String, Level> levels;
     private Level currentLevel;
 
+    private TitleLevel titleLevel;
+
     public Game(){
-        initialize();
+
     }
 
-    private void initialize(){
+    public static void createInstance(){
+        if(instance == null){
+            instance = new Game();
+        }
+    }
+
+    public void initialize(){
+        if(instance == null){
+            instance = null;
+        }
+
         paused = false;
         frameStartTime = System.currentTimeMillis();
-        levels = new ArrayList<>();
+        levels = new HashMap<String, Level>();
+        currentLevel = null;
+
+        titleLevel = new TitleLevel("Title Level");
+        currentLevel = titleLevel;
     }
 
     public void run() throws InterruptedException{
@@ -46,10 +66,37 @@ public class Game{
         }
 
         frameStartTime = frameEndTime;
+
+        if(!paused && currentLevel != null){
+            currentLevel.update();
+        }
+    }
+
+    public void render(Canvas canvas){
+        if(currentLevel == null){
+            return;
+        }
+
+        canvas.drawColor(Color.WHITE);
+        currentLevel.render(canvas);
     }
 
     public static Game getInstance(){
         return instance;
+    }
+
+    public Context getContext(){
+        return context;
+    }
+    public void setContext(Context context){
+        this.context = context;
+    }
+
+    public boolean isPaused(){
+        return paused;
+    }
+    public void setPaused(boolean paused){
+        this.paused = paused;
     }
 
     public float getFrameDeltaTime(){

@@ -44,8 +44,10 @@ public class Game{
         levels = new HashMap<String, Level>();
         currentLevel = null;
 
-        titleLevel = new TitleLevel("Title Level");
-        currentLevel = titleLevel;
+        addLevel(new TitleLevel("Title Level"));
+        addLevel(new TitleLevel("Sample Level"));
+
+        loadLevel("Title Level");
     }
 
     public void run() throws InterruptedException{
@@ -105,6 +107,16 @@ public class Game{
 
     public float getFramePerSecond(){
         return framePerSecond;
+    }
+
+    private void addLevel(Level level){
+        levels.put(level.getName(), level);
+    }
+    public void loadLevel(String levelName){
+        Level newLevel = levels.get(levelName);
+
+        newLevel.initialize();
+        currentLevel = newLevel;
     }
 
 }

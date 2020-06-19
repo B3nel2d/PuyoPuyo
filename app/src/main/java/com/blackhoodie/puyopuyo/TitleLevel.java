@@ -1,10 +1,8 @@
 package com.blackhoodie.puyopuyo;
 
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Paint;
-import android.media.Image;
 
 public class TitleLevel extends Level{
 

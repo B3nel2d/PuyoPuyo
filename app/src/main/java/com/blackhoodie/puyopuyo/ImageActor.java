@@ -17,7 +17,7 @@ public class ImageActor extends Actor{
 
     @Override
     public void update(){
-        //uiTransformComponent.setPosition(new Vector2D(uiTransformComponent.getPosition().x + 1, uiTransformComponent.getPosition().y));
+        uiTransformComponent.setPosition(new Vector2D(uiTransformComponent.getPosition().x + 1, uiTransformComponent.getPosition().y));
 
         super.update();
     }

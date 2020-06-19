@@ -49,10 +49,8 @@ abstract class Actor{
             return;
         }
 
-        if(!components.isEmpty()){
-            for(Component component : components){
-                component.update();
-            }
+        for(Component component : components){
+            component.update();
         }
     }
 

@@ -24,8 +24,6 @@ abstract class Level{
         updatingActors = false;
 
         drawables = new ArrayList<DrawableComponent>();
-
-        initialize();
     }
 
     public void addActor(Actor actor){
@@ -52,7 +50,9 @@ abstract class Level{
         drawables.remove(drawable);
     }
 
-    abstract void initialize();
+    public void initialize(){
+
+    }
 
     public void update(){
         updatingActors = true;

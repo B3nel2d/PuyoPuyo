@@ -2,6 +2,7 @@ package com.blackhoodie.puyopuyo;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -57,6 +58,18 @@ public class GameSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         Game.getInstance().render(canvas);
 
         surfaceHolder.unlockCanvasAndPost(canvas);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event){
+        switch(event.getAction()){
+            case MotionEvent.ACTION_DOWN:
+                Game.getInstance().loadLevel("Sample Level");
+
+                break;
+        }
+
+        return true;
     }
 
 }

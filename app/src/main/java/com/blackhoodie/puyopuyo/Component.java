@@ -5,7 +5,7 @@ abstract class Component{
     public enum State{
         Active,
         Inactive
-    };
+    }
 
     private Actor owner;
     private State state;

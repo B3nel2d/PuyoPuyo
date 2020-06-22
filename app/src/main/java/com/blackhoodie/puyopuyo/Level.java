@@ -1,6 +1,7 @@
 package com.blackhoodie.puyopuyo;
 
 import android.graphics.Canvas;
+import android.view.MotionEvent;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,6 +16,7 @@ abstract class Level{
     private boolean updatingActors;
 
     private List<DrawableComponent> drawables;
+    private List<InteractableComponent> interactables;
 
     public Level(String name){
         this.name = name;
@@ -24,6 +26,7 @@ abstract class Level{
         updatingActors = false;
 
         drawables = new ArrayList<DrawableComponent>();
+        interactables = new ArrayList<InteractableComponent>();
     }
 
     public void addActor(Actor actor){
@@ -47,11 +50,27 @@ abstract class Level{
     }
 
     public void removeDrawable(DrawableComponent drawable){
-        drawables.remove(drawable);
+        if(drawables.contains(drawable)){
+            drawables.remove(drawable);
+        }
+    }
+
+    public void addInteractable(InteractableComponent interactable){
+        interactables.add(interactable);
+    }
+    public void removeInteractable(InteractableComponent interactable){
+        if(interactables.contains(interactable)){
+            interactables.remove(interactable);
+        }
     }
 
     public void initialize(){
+        actors = new ArrayList<Actor>();
+        pendingActors = new ArrayList<Actor>();
+        updatingActors = false;
 
+        drawables = new ArrayList<DrawableComponent>();
+        interactables = new ArrayList<InteractableComponent>();
     }
 
     public void update(){
@@ -74,13 +93,21 @@ abstract class Level{
         }
 
         for(Actor actor : deletedActors){
-            actor = null;
+            //actor = null;
         }
     }
 
     public void render(Canvas canvas){
         for(DrawableComponent drawable : drawables){
             drawable.draw(canvas);
+        }
+    }
+
+    public void onTouchEvent(MotionEvent event){
+        for(InteractableComponent interactable : interactables){
+            if(interactable.isInteractable()){
+                interactable.onInteract(event);
+            }
         }
     }
 

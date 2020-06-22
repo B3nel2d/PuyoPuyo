@@ -3,6 +3,7 @@ package com.blackhoodie.puyopuyo;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.view.MotionEvent;
 
 import java.util.HashMap;
 
@@ -81,6 +82,12 @@ public class Game{
 
         canvas.drawColor(Color.WHITE);
         currentLevel.render(canvas);
+    }
+
+    public void onTouchEvent(MotionEvent event){
+        if(!paused && currentLevel != null){
+            currentLevel.onTouchEvent(event);
+        }
     }
 
     public static Game getInstance(){

@@ -21,6 +21,14 @@ public class UITransformComponent extends Component{
 
     }
 
+    public void translate(Vector2D translation){
+        position.x += translation.x;
+        position.y += translation.y;
+    }
+    public void translate(float x, float y){
+        translate(new Vector2D(x, y));
+    }
+
     public Vector2D getSize(){
         return size;
     }
@@ -34,12 +42,18 @@ public class UITransformComponent extends Component{
             this.size.y = 0;
         }
     }
+    public void setSize(float x, float y){
+        setSize(new Vector2D(x, y));
+    }
 
     public Vector2D getPosition(){
         return position;
     }
     public void setPosition(Vector2D position){
         this.position = position;
+    }
+    public void setPosition(float x, float y){
+        setPosition(new Vector2D(x, y));
     }
 
     public float getRotation(){

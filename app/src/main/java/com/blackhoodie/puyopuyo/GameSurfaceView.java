@@ -56,18 +56,12 @@ public class GameSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         }
 
         Game.getInstance().render(canvas);
-
         surfaceHolder.unlockCanvasAndPost(canvas);
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event){
-        switch(event.getAction()){
-            case MotionEvent.ACTION_DOWN:
-                Game.getInstance().loadLevel("Sample Level");
-
-                break;
-        }
+        Game.getInstance().onTouchEvent(event);
 
         return true;
     }

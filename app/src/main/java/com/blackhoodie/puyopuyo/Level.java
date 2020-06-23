@@ -37,9 +37,15 @@ abstract class Level{
             actors.add(actor);
         }
     }
-
     public void removeActor(Actor actor){
-        if(actors.contains(actor)){
+        if(actors.contains(actor) && actor.getState() == Actor.State.Deleted){
+            for(DrawableComponent drawable : actor.getDrawables()){
+                removeDrawable(drawable);
+            }
+            for(InteractableComponent interactable : actor.getInteractables()){
+                removeInteractable(interactable);
+            }
+
             actors.remove(actor);
         }
     }
@@ -48,7 +54,6 @@ abstract class Level{
         drawables.add(drawable);
         Collections.sort(drawables, (drawable1, drawable2) -> drawable1.getDrawOrder() - drawable2.getDrawOrder());
     }
-
     public void removeDrawable(DrawableComponent drawable){
         if(drawables.contains(drawable)){
             drawables.remove(drawable);
@@ -85,15 +90,10 @@ abstract class Level{
         }
         pendingActors.clear();
 
-        List<Actor> deletedActors = new ArrayList<Actor>();
         for(Actor actor : actors){
             if(actor.getState() == Actor.State.Deleted){
-                deletedActors.add(actor);
+                removeActor(actor);
             }
-        }
-
-        for(Actor actor : deletedActors){
-            //actor = null;
         }
     }
 

@@ -15,14 +15,16 @@ public class GameSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         getHolder().addCallback(this);
 
         Game.createInstance();
+        Game.getInstance().setView(this);
         Game.getInstance().setContext(context);
-        Game.getInstance().initialize();
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder){
         thread = new Thread(this);
         thread.start();
+
+        Game.getInstance().initialize();
     }
 
     @Override

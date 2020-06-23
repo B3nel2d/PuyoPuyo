@@ -10,8 +10,14 @@ public class ImageComponent extends DrawableComponent{
     private Bitmap bitmap;
     private Paint paint;
 
-    public ImageComponent(Actor owner, UITransformComponent uiTransform, int drawOrder){
-        super(owner, 0, uiTransform, drawOrder);
+    public ImageComponent(Actor owner, UITransformComponent uiTransformComponent, int drawOrder, boolean visible){
+        super(owner, 0, uiTransformComponent, drawOrder, visible);
+    }
+    public ImageComponent(Actor owner, UITransformComponent uiTransformComponent, int drawOrder){
+        this(owner, uiTransformComponent, drawOrder, true);
+    }
+    public ImageComponent(Actor owner, UITransformComponent uiTransformComponent){
+        this(owner, uiTransformComponent, 0, true);
     }
 
     public void update(){
@@ -19,11 +25,13 @@ public class ImageComponent extends DrawableComponent{
     }
 
     public void draw(Canvas canvas){
+        super.draw(canvas);
+
         if(bitmap != null && paint != null){
             Matrix matrix = new Matrix();
-            bitmap = Bitmap.createScaledBitmap(bitmap, (int)uiTransform.getSize().x, (int)uiTransform.getSize().y, true);
-            matrix.setRotate(uiTransform.getRotation(), bitmap.getWidth() / 2, bitmap.getHeight() / 2);
-            matrix.postTranslate(uiTransform.getPosition().x, uiTransform.getPosition().y);
+            bitmap = Bitmap.createScaledBitmap(bitmap, (int)uiTransformComponent.getSize().x, (int)uiTransformComponent.getSize().y, true);
+            matrix.setRotate(uiTransformComponent.getRotation(), bitmap.getWidth() / 2, bitmap.getHeight() / 2);
+            matrix.postTranslate(uiTransformComponent.getPosition().x - bitmap.getWidth() / 2, uiTransformComponent.getPosition().y - bitmap.getHeight() / 2);
 
             canvas.drawBitmap(bitmap, matrix, paint);
         }

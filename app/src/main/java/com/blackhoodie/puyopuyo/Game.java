@@ -10,6 +10,7 @@ import java.util.HashMap;
 public class Game{
 
     private static Game instance;
+    private GameSurfaceView view;
     private Context context;
 
     private boolean paused;
@@ -23,8 +24,6 @@ public class Game{
     private HashMap<String, Level> levels;
     private Level currentLevel;
 
-    private TitleLevel titleLevel;
-
     public Game(){
 
     }
@@ -33,6 +32,16 @@ public class Game{
         if(instance == null){
             instance = new Game();
         }
+    }
+
+    private void addLevel(Level level){
+        levels.put(level.getName(), level);
+    }
+    public void loadLevel(String levelName){
+        Level newLevel = levels.get(levelName);
+
+        newLevel.initialize();
+        currentLevel = newLevel;
     }
 
     public void initialize(){
@@ -94,6 +103,13 @@ public class Game{
         return instance;
     }
 
+    public GameSurfaceView getView(){
+        return view;
+    }
+    public void setView(GameSurfaceView view){
+        this.view = view;
+    }
+
     public Context getContext(){
         return context;
     }
@@ -116,14 +132,8 @@ public class Game{
         return framePerSecond;
     }
 
-    private void addLevel(Level level){
-        levels.put(level.getName(), level);
-    }
-    public void loadLevel(String levelName){
-        Level newLevel = levels.get(levelName);
-
-        newLevel.initialize();
-        currentLevel = newLevel;
+    public Vector2D getScreenSize(){
+        return new Vector2D(view.getWidth(), view.getHeight());
     }
 
 }

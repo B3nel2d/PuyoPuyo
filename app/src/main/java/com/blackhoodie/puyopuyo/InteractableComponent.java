@@ -1,19 +1,15 @@
 package com.blackhoodie.puyopuyo;
 
-import android.os.Build;
 import android.view.MotionEvent;
 
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
-import androidx.annotation.RequiresApi;
+import java.util.HashMap;
 
 public class InteractableComponent extends Component{
 
     private UITransformComponent uiTransform;
     private boolean interactable;
 
-    private Consumer<?> action;
+    private HashMap<Integer, Runnable> tasks;
 
     public InteractableComponent(Actor owner, int updateOrder, UITransformComponent uiTransform, boolean interactable){
         super(owner, updateOrder);
@@ -21,7 +17,7 @@ public class InteractableComponent extends Component{
         this.uiTransform = uiTransform;
         this.interactable = interactable;
 
-        action = null;
+        tasks = new HashMap<Integer, Runnable>();
 
         owner.getOwner().addInteractable(this);
     }
@@ -34,20 +30,26 @@ public class InteractableComponent extends Component{
 
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     public void onInteract(MotionEvent event){
-        if(action == null){
+        if(!interactable){
             return;
         }
 
-        if(event.getX() < uiTransform.getPosition().x || uiTransform.getPosition().x + uiTransform.getSize().x < event.getX()){
+        if(!tasks.containsKey(event.getAction())){
             return;
         }
-        if(event.getY() < uiTransform.getPosition().y || uiTransform.getPosition().y + uiTransform.getSize().y < event.getY()){
+        if(tasks.get(event.getAction()) == null){
             return;
         }
 
-        action.accept(null);
+        if(event.getX() < uiTransform.getPosition().x - uiTransform.getSize().x / 2.0f || uiTransform.getPosition().x + uiTransform.getSize().x / 2.0f < event.getX()){
+            return;
+        }
+        if(event.getY() < uiTransform.getPosition().y - uiTransform.getSize().y / 2.0f || uiTransform.getPosition().y + uiTransform.getSize().y / 2.0f < event.getY()){
+            return;
+        }
+
+        tasks.get(event.getAction()).run();
     }
 
     public boolean isInteractable(){
@@ -57,13 +59,16 @@ public class InteractableComponent extends Component{
         this.interactable = value;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
-    public void setAction(Consumer<?> action){
-        this.action = action;
+    public void addTask(int action, Runnable task){
+        tasks.put(action, task);
     }
-    public void clearAction(){
-        this.action = null;
+    public void removeTask(int action){
+        if(tasks.containsKey(action)){
+            tasks.remove(action);
+        }
+    }
+    public void clearTasks(){
+        tasks.clear();
     }
 
 }
-

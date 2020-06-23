@@ -17,11 +17,6 @@ public class ButtonActor extends Actor{
         interactableComponent = new InteractableComponent(this, uiTransformComponent);
     }
 
-    @Override
-    public void update(){
-        super.update();
-    }
-
     public UITransformComponent getUITransformComponent(){
         return uiTransformComponent;
     }

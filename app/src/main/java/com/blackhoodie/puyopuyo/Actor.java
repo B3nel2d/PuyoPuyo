@@ -1,5 +1,7 @@
 package com.blackhoodie.puyopuyo;
 
+import android.graphics.drawable.Drawable;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,23 +21,25 @@ abstract class Actor{
 
     private List<Component> components;
 
-    public Actor(Level owner, String name){
+    public Actor(Level owner, String name, State state){
         this.owner = owner;
         owner.addActor(this);
 
         this.name = name;
-        state = State.Active;
+        this.state = state;
 
         components = new ArrayList<Component>();
 
         initialize();
+    }
+    public Actor(Level owner, String name){
+        this(owner, name, State.Active);
     }
 
     public void addComponent(Component component){
         components.add(component);
         Collections.sort(components, (component1, component2) -> component1.getUpdateOrder() - component2.getUpdateOrder());
     }
-
     public void removeComponent(Component component){
         if(components.contains(component)){
             components.remove(component);
@@ -70,6 +74,28 @@ abstract class Actor{
     }
     public void setState(State state){
         this.state = state;
+    }
+
+    public List<DrawableComponent> getDrawables(){
+        List<DrawableComponent> drawables = new ArrayList<DrawableComponent>();
+        for(Component component : components){
+            if(component instanceof DrawableComponent){
+                drawables.add((DrawableComponent)component);
+            }
+        }
+
+        return drawables;
+    }
+
+    public List<InteractableComponent> getInteractables(){
+        List<InteractableComponent> interactables = new ArrayList<InteractableComponent>();
+        for(Component component : components){
+            if(component instanceof InteractableComponent){
+                interactables.add((InteractableComponent) component);
+            }
+        }
+
+        return interactables;
     }
 
 }

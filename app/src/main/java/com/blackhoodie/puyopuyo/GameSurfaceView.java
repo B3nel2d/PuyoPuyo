@@ -2,9 +2,12 @@ package com.blackhoodie.puyopuyo;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.os.Build;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
+import androidx.annotation.RequiresApi;
 
 public class GameSurfaceView extends SurfaceView implements SurfaceHolder.Callback, Runnable{
 
@@ -19,6 +22,7 @@ public class GameSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         Game.getInstance().setContext(context);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder){
         thread = new Thread(this);
@@ -61,6 +65,7 @@ public class GameSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         surfaceHolder.unlockCanvasAndPost(canvas);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public boolean onTouchEvent(MotionEvent event){
         Game.getInstance().onTouchEvent(event);

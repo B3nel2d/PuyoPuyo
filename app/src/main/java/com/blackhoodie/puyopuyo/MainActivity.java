@@ -12,4 +12,11 @@ public class MainActivity extends AppCompatActivity{
         setContentView(new GameSurfaceView(this));
     }
 
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+
+        Game.getInstance().dispose();
+    }
+
 }

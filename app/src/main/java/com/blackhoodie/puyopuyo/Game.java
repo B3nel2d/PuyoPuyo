@@ -3,15 +3,17 @@ package com.blackhoodie.puyopuyo;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.os.Build;
 import android.view.MotionEvent;
 
 import java.util.HashMap;
+import java.util.Map;
+
+import androidx.annotation.RequiresApi;
 
 public class Game{
 
     private static Game instance;
-    private GameSurfaceView view;
-    private Context context;
 
     private boolean paused;
 
@@ -23,6 +25,9 @@ public class Game{
 
     private HashMap<String, Level> levels;
     private Level currentLevel;
+
+    private GameSurfaceView view;
+    private Context context;
 
     public Game(){
 
@@ -37,13 +42,18 @@ public class Game{
     private void addLevel(Level level){
         levels.put(level.getName(), level);
     }
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void loadLevel(String levelName){
-        Level newLevel = levels.get(levelName);
+        if(currentLevel != null){
+            currentLevel.dispose();
+        }
 
+        Level newLevel = levels.get(levelName);
         newLevel.initialize();
         currentLevel = newLevel;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void initialize(){
         if(instance == null){
             instance = null;
@@ -55,8 +65,6 @@ public class Game{
         currentLevel = null;
 
         addLevel(new TitleLevel("Title Level"));
-        addLevel(new TitleLevel("Sample Level"));
-
         loadLevel("Title Level");
     }
 
@@ -79,13 +87,13 @@ public class Game{
 
         frameStartTime = frameEndTime;
 
-        if(!paused && currentLevel != null){
+        if(currentLevel != null && currentLevel.isLoadCompleted() && !paused){
             currentLevel.update();
         }
     }
 
     public void render(Canvas canvas){
-        if(currentLevel == null){
+        if(currentLevel == null || !currentLevel.isLoadCompleted()){
             return;
         }
 
@@ -99,22 +107,16 @@ public class Game{
         }
     }
 
+    public void dispose(){
+        for(Map.Entry<String, Level> entry : levels.entrySet()){
+            if(entry.getValue().getAudioManager() != null){
+                entry.getValue().getAudioManager().release();
+            }
+        }
+    }
+
     public static Game getInstance(){
         return instance;
-    }
-
-    public GameSurfaceView getView(){
-        return view;
-    }
-    public void setView(GameSurfaceView view){
-        this.view = view;
-    }
-
-    public Context getContext(){
-        return context;
-    }
-    public void setContext(Context context){
-        this.context = context;
     }
 
     public boolean isPaused(){
@@ -130,6 +132,20 @@ public class Game{
 
     public float getFramePerSecond(){
         return framePerSecond;
+    }
+
+    public GameSurfaceView getView(){
+        return view;
+    }
+    public void setView(GameSurfaceView view){
+        this.view = view;
+    }
+
+    public Context getContext(){
+        return context;
+    }
+    public void setContext(Context context){
+        this.context = context;
     }
 
     public Vector2D getScreenSize(){

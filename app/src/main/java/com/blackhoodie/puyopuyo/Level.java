@@ -1,15 +1,22 @@
 package com.blackhoodie.puyopuyo;
 
 import android.graphics.Canvas;
+import android.os.Build;
 import android.view.MotionEvent;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import androidx.annotation.RequiresApi;
+
 abstract class Level{
 
-    private String name;
+    protected String name;
+
+    protected AudioManager audioManager;
+
+    protected boolean loadCompleted;
 
     private List<Actor> actors;
     private List<Actor> pendingActors;
@@ -18,8 +25,16 @@ abstract class Level{
     private List<DrawableComponent> drawables;
     private List<InteractableComponent> interactables;
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public Level(String name){
         this.name = name;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void initialize(){
+        audioManager = new AudioManager(this);
+
+        loadCompleted = false;
 
         actors = new ArrayList<Actor>();
         pendingActors = new ArrayList<Actor>();
@@ -27,6 +42,49 @@ abstract class Level{
 
         drawables = new ArrayList<DrawableComponent>();
         interactables = new ArrayList<InteractableComponent>();
+
+        initializeActors();
+
+        audioManager.initialize();
+    }
+
+    abstract void initializeActors();
+
+    public void onLoadComplete(){
+        loadCompleted = true;
+    }
+
+    public void update(){
+        updatingActors = true;
+        for(Actor actor: actors){
+            actor.update();
+        }
+        updatingActors = false;
+
+        for(Actor actor: pendingActors){
+            actors.add(actor);
+        }
+        pendingActors.clear();
+
+        for(Actor actor : actors){
+            if(actor.getState() == Actor.State.Deleted){
+                removeActor(actor);
+            }
+        }
+    }
+
+    public void render(Canvas canvas){
+        for(DrawableComponent drawable : drawables){
+            drawable.draw(canvas);
+        }
+    }
+
+    public void onTouchEvent(MotionEvent event){
+        for(InteractableComponent interactable : interactables){
+            if(interactable.isInteractable()){
+                interactable.onInteract(event);
+            }
+        }
     }
 
     public void addActor(Actor actor){
@@ -69,50 +127,20 @@ abstract class Level{
         }
     }
 
-    public void initialize(){
-        actors = new ArrayList<Actor>();
-        pendingActors = new ArrayList<Actor>();
-        updatingActors = false;
-
-        drawables = new ArrayList<DrawableComponent>();
-        interactables = new ArrayList<InteractableComponent>();
-    }
-
-    public void update(){
-        updatingActors = true;
-        for(Actor actor: actors){
-            actor.update();
-        }
-        updatingActors = false;
-
-        for(Actor actor: pendingActors){
-            actors.add(actor);
-        }
-        pendingActors.clear();
-
-        for(Actor actor : actors){
-            if(actor.getState() == Actor.State.Deleted){
-                removeActor(actor);
-            }
-        }
-    }
-
-    public void render(Canvas canvas){
-        for(DrawableComponent drawable : drawables){
-            drawable.draw(canvas);
-        }
-    }
-
-    public void onTouchEvent(MotionEvent event){
-        for(InteractableComponent interactable : interactables){
-            if(interactable.isInteractable()){
-                interactable.onInteract(event);
-            }
-        }
+    public void dispose(){
+        audioManager.release();
     }
 
     public String getName(){
         return name;
+    }
+
+    public AudioManager getAudioManager(){
+        return audioManager;
+    }
+
+    public boolean isLoadCompleted(){
+        return loadCompleted;
     }
 
 }

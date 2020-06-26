@@ -5,7 +5,6 @@ import android.os.Build;
 import android.view.MotionEvent;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import androidx.annotation.RequiresApi;
@@ -14,16 +13,15 @@ abstract class Level{
 
     protected String name;
 
+    protected GraphicsManager graphicsManager;
     protected AudioManager audioManager;
+    protected TouchEventManager touchEventManager;
 
     protected boolean loadCompleted;
 
     private List<Actor> actors;
     private List<Actor> pendingActors;
     private boolean updatingActors;
-
-    private List<DrawableComponent> drawables;
-    private List<InteractableComponent> interactables;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public Level(String name){
@@ -32,16 +30,15 @@ abstract class Level{
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void initialize(){
+        graphicsManager = new GraphicsManager(this);
         audioManager = new AudioManager(this);
+        touchEventManager = new TouchEventManager(this);
 
         loadCompleted = false;
 
         actors = new ArrayList<Actor>();
         pendingActors = new ArrayList<Actor>();
         updatingActors = false;
-
-        drawables = new ArrayList<DrawableComponent>();
-        interactables = new ArrayList<InteractableComponent>();
 
         initializeActors();
 
@@ -52,6 +49,42 @@ abstract class Level{
 
     public void onLoadComplete(){
         loadCompleted = true;
+    }
+
+    public void addActor(Actor actor){
+        if(updatingActors){
+            pendingActors.add(actor);
+        }
+        else{
+            actors.add(actor);
+        }
+    }
+    public void removeActor(Actor actor){
+        if(actors.contains(actor) && actor.getState() == Actor.State.Deleted){
+            actors.remove(actor);
+        }
+    }
+
+    public void addDrawable(DrawableComponent drawable){
+        if(graphicsManager != null){
+            graphicsManager.addDrawable(drawable);
+        }
+    }
+    public void removeDrawable(DrawableComponent drawable){
+        if(graphicsManager != null){
+            graphicsManager.removeDrawable(drawable);
+        }
+    }
+
+    public void addInteractable(InteractableComponent interactable){
+        if(touchEventManager != null){
+            touchEventManager.addInteractable(interactable);
+        }
+    }
+    public void removeInteractable(InteractableComponent interactable){
+        if(touchEventManager != null){
+            touchEventManager.removeInteractable(interactable);
+        }
     }
 
     public void update(){
@@ -74,65 +107,29 @@ abstract class Level{
     }
 
     public void render(Canvas canvas){
-        for(DrawableComponent drawable : drawables){
-            drawable.draw(canvas);
+        if(graphicsManager == null){
+            return;
         }
+
+        graphicsManager.render(canvas);
     }
 
-    public void onTouchEvent(MotionEvent event){
-        for(InteractableComponent interactable : interactables){
-            if(interactable.isInteractable()){
-                interactable.onInteract(event);
-            }
-        }
-    }
-
-    public void addActor(Actor actor){
-        if(updatingActors){
-            pendingActors.add(actor);
-        }
-        else{
-            actors.add(actor);
-        }
-    }
-    public void removeActor(Actor actor){
-        if(actors.contains(actor) && actor.getState() == Actor.State.Deleted){
-            for(DrawableComponent drawable : actor.getDrawables()){
-                removeDrawable(drawable);
-            }
-            for(InteractableComponent interactable : actor.getInteractables()){
-                removeInteractable(interactable);
-            }
-
-            actors.remove(actor);
-        }
-    }
-
-    public void addDrawable(DrawableComponent drawable){
-        drawables.add(drawable);
-        Collections.sort(drawables, (drawable1, drawable2) -> drawable1.getDrawOrder() - drawable2.getDrawOrder());
-    }
-    public void removeDrawable(DrawableComponent drawable){
-        if(drawables.contains(drawable)){
-            drawables.remove(drawable);
-        }
-    }
-
-    public void addInteractable(InteractableComponent interactable){
-        interactables.add(interactable);
-    }
-    public void removeInteractable(InteractableComponent interactable){
-        if(interactables.contains(interactable)){
-            interactables.remove(interactable);
-        }
+    public void onTouchEvent(MotionEvent motionEvent){
+        touchEventManager.onTouchEvent(motionEvent);
     }
 
     public void dispose(){
-        audioManager.release();
+        graphicsManager.dispose();
+        audioManager.dispose();
+        touchEventManager.dispose();
     }
 
     public String getName(){
         return name;
+    }
+
+    public GraphicsManager getGraphicsManager(){
+        return graphicsManager;
     }
 
     public AudioManager getAudioManager(){

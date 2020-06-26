@@ -30,8 +30,6 @@ public class TextComponent extends DrawableComponent{
     }
 
     public void draw(Canvas canvas){
-        super.draw(canvas);
-
         if(text != null && paint != null){
             canvas.drawText(text, uiTransformComponent.getPosition().x - uiTransformComponent.getSize().x / 2.0f, uiTransformComponent.getPosition().y - uiTransformComponent.getSize().y / 2.0f, paint);
         }

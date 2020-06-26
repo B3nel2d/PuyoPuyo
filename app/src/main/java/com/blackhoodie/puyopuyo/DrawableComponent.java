@@ -18,11 +18,7 @@ abstract class DrawableComponent extends Component{
         owner.getOwner().addDrawable(this);
     }
 
-    public void draw(Canvas canvas){
-        if(!visible){
-            return;
-        }
-    }
+    abstract void draw(Canvas canvas);
 
     public int getDrawOrder(){
         return drawOrder;

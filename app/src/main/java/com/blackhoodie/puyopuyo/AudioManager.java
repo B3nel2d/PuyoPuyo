@@ -72,10 +72,6 @@ public class AudioManager{
         }
     }
 
-    public void release(){
-        soundPool.release();
-    }
-
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void addAudio(String name, String filePath){
         if(audios.stream().anyMatch(target -> target.getName() == name)){
@@ -130,6 +126,11 @@ public class AudioManager{
 
     public void stopAudio(int streamId){
         soundPool.stop(streamId);
+    }
+
+    public void dispose(){
+        soundPool.release();
+        audios.clear();
     }
 
     public boolean isLoadCompleted(){

@@ -39,20 +39,6 @@ public class Game{
         }
     }
 
-    private void addLevel(Level level){
-        levels.put(level.getName(), level);
-    }
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public void loadLevel(String levelName){
-        if(currentLevel != null){
-            currentLevel.dispose();
-        }
-
-        Level newLevel = levels.get(levelName);
-        newLevel.initialize();
-        currentLevel = newLevel;
-    }
-
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void initialize(){
         if(instance == null){
@@ -66,6 +52,20 @@ public class Game{
 
         addLevel(new TitleLevel("Title Level"));
         loadLevel("Title Level");
+    }
+
+    private void addLevel(Level level){
+        levels.put(level.getName(), level);
+    }
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void loadLevel(String levelName){
+        if(currentLevel != null){
+            currentLevel.dispose();
+        }
+
+        Level newLevel = levels.get(levelName);
+        newLevel.initialize();
+        currentLevel = newLevel;
     }
 
     public void run() throws InterruptedException{
@@ -110,7 +110,7 @@ public class Game{
     public void dispose(){
         for(Map.Entry<String, Level> entry : levels.entrySet()){
             if(entry.getValue().getAudioManager() != null){
-                entry.getValue().getAudioManager().release();
+                entry.getValue().getAudioManager().dispose();
             }
         }
     }
@@ -122,8 +122,8 @@ public class Game{
     public boolean isPaused(){
         return paused;
     }
-    public void setPaused(boolean paused){
-        this.paused = paused;
+    public void setPaused(boolean value){
+        this.paused = value;
     }
 
     public float getFrameDeltaTime(){

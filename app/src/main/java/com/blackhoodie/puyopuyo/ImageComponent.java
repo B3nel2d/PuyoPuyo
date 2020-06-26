@@ -25,8 +25,6 @@ public class ImageComponent extends DrawableComponent{
     }
 
     public void draw(Canvas canvas){
-        super.draw(canvas);
-
         if(bitmap != null && paint != null){
             Matrix matrix = new Matrix();
             bitmap = Bitmap.createScaledBitmap(bitmap, (int)uiTransformComponent.getSize().x, (int)uiTransformComponent.getSize().y, true);

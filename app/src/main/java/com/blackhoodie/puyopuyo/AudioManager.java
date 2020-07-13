@@ -20,7 +20,6 @@ public class AudioManager{
     private AudioAttributes audioAttributes;
 
     private List<Audio> audios;
-    private boolean loadCompleted;
 
     private float volume;
 
@@ -37,7 +36,6 @@ public class AudioManager{
         if(audios == null){
             audios = new ArrayList<Audio>();
         }
-        loadCompleted = false;
 
         volume = 1.0f;
 
@@ -131,10 +129,6 @@ public class AudioManager{
     public void dispose(){
         soundPool.release();
         audios.clear();
-    }
-
-    public boolean isLoadCompleted(){
-        return loadCompleted;
     }
 
     public float getVolume(){

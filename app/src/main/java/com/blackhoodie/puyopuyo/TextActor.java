@@ -15,6 +15,11 @@ public class TextActor extends Actor{
         textComponent = new TextComponent(this, uiTransformComponent, 0);
     }
 
+    @Override
+    public void update(){
+
+    }
+
     public UITransformComponent getUITransformComponent(){
         return uiTransformComponent;
     }

@@ -51,7 +51,8 @@ public class Game{
         currentLevel = null;
 
         addLevel(new TitleLevel("Title Level"));
-        loadLevel("Title Level");
+        addLevel(new GameLevel("Game Level"));
+        loadLevel("Game Level");
     }
 
     private void addLevel(Level level){
@@ -89,6 +90,7 @@ public class Game{
 
         if(currentLevel != null && currentLevel.isLoadCompleted() && !paused){
             currentLevel.update();
+            currentLevel.updateActors();
         }
     }
 

@@ -15,6 +15,11 @@ public class ImageActor extends Actor{
         imageComponent = new ImageComponent(this, uiTransformComponent, 0);
     }
 
+    @Override
+    public void update(){
+
+    }
+
     public UITransformComponent getUITransformComponent(){
         return uiTransformComponent;
     }

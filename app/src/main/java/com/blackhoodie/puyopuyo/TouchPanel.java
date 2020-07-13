@@ -1,19 +1,17 @@
 package com.blackhoodie.puyopuyo;
 
-public class ButtonActor extends Actor{
+public class TouchPanel extends Actor{
 
     private UITransformComponent uiTransformComponent;
-    private ImageComponent imageComponent;
     private InteractableComponent interactableComponent;
 
-    public ButtonActor(Level owner, String name){
+    public TouchPanel(Level owner, String name){
         super(owner, name);
     }
 
     @Override
     public void initialize(){
         uiTransformComponent = new UITransformComponent(this);
-        imageComponent = new ImageComponent(this, uiTransformComponent, 0);
         interactableComponent = new InteractableComponent(this, uiTransformComponent);
     }
 
@@ -22,12 +20,8 @@ public class ButtonActor extends Actor{
 
     }
 
-    public UITransformComponent getUITransformComponent(){
+    public UITransformComponent getUiTransformComponent(){
         return uiTransformComponent;
-    }
-
-    public ImageComponent getImageComponent(){
-        return imageComponent;
     }
 
     public InteractableComponent getInteractableComponent(){

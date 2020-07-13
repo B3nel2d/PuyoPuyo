@@ -17,8 +17,11 @@ public class GraphicsManager{
     private Level owner;
 
     private List<DrawableComponent> drawables;
+    private List<DrawableComponent> pendingDrawables;
 
     private HashMap<String, Bitmap> bitmaps;
+
+    private boolean rendering;
 
     public GraphicsManager(Level owner){
         this.owner = owner;
@@ -28,12 +31,21 @@ public class GraphicsManager{
 
     public void initialize(){
         drawables = new ArrayList<DrawableComponent>();
+        pendingDrawables = new ArrayList<DrawableComponent>();
+
         bitmaps = new HashMap<String, Bitmap>();
+
+        rendering = false;
     }
 
     public void addDrawable(DrawableComponent drawable){
-        drawables.add(drawable);
-        Collections.sort(drawables, (drawable1, drawable2) -> drawable1.getDrawOrder() - drawable2.getDrawOrder());
+        if(rendering){
+            pendingDrawables.add(drawable);
+        }
+        else{
+            drawables.add(drawable);
+            Collections.sort(drawables, (drawable1, drawable2) -> drawable1.getDrawOrder() - drawable2.getDrawOrder());
+        }
     }
     public void removeDrawable(DrawableComponent drawable){
         if(drawables.contains(drawable)){
@@ -74,11 +86,18 @@ public class GraphicsManager{
     }
 
     public void render(Canvas canvas){
+        rendering = true;
         for(DrawableComponent drawable : drawables){
             if(drawable.isVisible()){
                 drawable.draw(canvas);
             }
         }
+        rendering = false;
+
+        for(DrawableComponent drawable : pendingDrawables){
+            drawables.add(drawable);
+        }
+        pendingDrawables.clear();
     }
 
     public void dispose(){

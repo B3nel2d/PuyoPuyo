@@ -25,14 +25,19 @@ public class ImageComponent extends DrawableComponent{
     }
 
     public void draw(Canvas canvas){
-        if(bitmap != null && paint != null){
-            Matrix matrix = new Matrix();
-            bitmap = Bitmap.createScaledBitmap(bitmap, (int)uiTransformComponent.getSize().x, (int)uiTransformComponent.getSize().y, true);
-            matrix.setRotate(uiTransformComponent.getRotation(), bitmap.getWidth() / 2, bitmap.getHeight() / 2);
-            matrix.postTranslate(uiTransformComponent.getPosition().x - bitmap.getWidth() / 2, uiTransformComponent.getPosition().y - bitmap.getHeight() / 2);
-
-            canvas.drawBitmap(bitmap, matrix, paint);
+        if(bitmap == null){
+            return;
         }
+        if(paint == null){
+            paint = new Paint();
+        }
+
+        Matrix matrix = new Matrix();
+        bitmap = Bitmap.createScaledBitmap(bitmap, (int)uiTransformComponent.getSize().x, (int)uiTransformComponent.getSize().y, true);
+        matrix.setRotate(uiTransformComponent.getRotation(), bitmap.getWidth() / 2, bitmap.getHeight() / 2);
+        matrix.postTranslate(uiTransformComponent.getPosition().x - bitmap.getWidth() / 2, uiTransformComponent.getPosition().y - bitmap.getHeight() / 2);
+
+        canvas.drawBitmap(bitmap, matrix, paint);
     }
 
     public Bitmap getBitmap(){

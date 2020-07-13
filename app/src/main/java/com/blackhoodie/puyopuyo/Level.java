@@ -87,10 +87,17 @@ abstract class Level{
         }
     }
 
-    public void update(){
+    protected void skipLoad(){
+        loadCompleted = true;
+    }
+
+    abstract void update();
+
+    public void updateActors(){
         updatingActors = true;
         for(Actor actor: actors){
             actor.update();
+            actor.updateComponents();
         }
         updatingActors = false;
 

@@ -1,7 +1,5 @@
 package com.blackhoodie.puyopuyo;
 
-import android.graphics.drawable.Drawable;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -12,14 +10,14 @@ abstract class Actor{
         Active,
         Inactive,
         Deleted
-    };
+    }
 
-    private Level owner;
+    protected Level owner;
 
-    private String name;
-    private State state;
+    protected String name;
+    protected State state;
 
-    private List<Component> components;
+    protected List<Component> components;
 
     public Actor(Level owner, String name, State state){
         this.owner = owner;
@@ -36,6 +34,8 @@ abstract class Actor{
         this(owner, name, State.Active);
     }
 
+    abstract void initialize();
+
     public void addComponent(Component component){
         components.add(component);
         Collections.sort(components, (component1, component2) -> component1.getUpdateOrder() - component2.getUpdateOrder());
@@ -46,9 +46,9 @@ abstract class Actor{
         }
     }
 
-    abstract void initialize();
+    abstract void update();
 
-    public void update(){
+    public void updateComponents(){
         if(state != State.Active){
             return;
         }
@@ -74,28 +74,6 @@ abstract class Actor{
     }
     public void setState(State state){
         this.state = state;
-    }
-
-    public List<DrawableComponent> getDrawables(){
-        List<DrawableComponent> drawables = new ArrayList<DrawableComponent>();
-        for(Component component : components){
-            if(component instanceof DrawableComponent){
-                drawables.add((DrawableComponent)component);
-            }
-        }
-
-        return drawables;
-    }
-
-    public List<InteractableComponent> getInteractables(){
-        List<InteractableComponent> interactables = new ArrayList<InteractableComponent>();
-        for(Component component : components){
-            if(component instanceof InteractableComponent){
-                interactables.add((InteractableComponent) component);
-            }
-        }
-
-        return interactables;
     }
 
 }

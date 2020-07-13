@@ -1,15 +1,28 @@
 package com.blackhoodie.puyopuyo;
 
+import android.os.Build;
 import android.view.MotionEvent;
 
 import java.util.HashMap;
+import java.util.function.Consumer;
+
+import androidx.annotation.RequiresApi;
 
 public class InteractableComponent extends Component{
+
+    public enum TouchAction{
+        Down,
+        Move,
+        Up,
+        LongPress,
+        DoubleTap
+    }
 
     private UITransformComponent uiTransform;
     private boolean interactable;
 
-    private HashMap<Integer, Runnable> tasks;
+    private HashMap<TouchAction, Runnable> tasks;
+    private Consumer<FlickState> flickTask;
 
     public InteractableComponent(Actor owner, int updateOrder, UITransformComponent uiTransform, boolean interactable){
         super(owner, updateOrder);
@@ -17,7 +30,8 @@ public class InteractableComponent extends Component{
         this.uiTransform = uiTransform;
         this.interactable = interactable;
 
-        tasks = new HashMap<Integer, Runnable>();
+        tasks = new HashMap<TouchAction, Runnable>();
+        flickTask = null;
 
         owner.getOwner().addInteractable(this);
     }
@@ -28,6 +42,22 @@ public class InteractableComponent extends Component{
     @Override
     public void update(){
 
+    }
+
+    public void addTask(TouchAction touchAction, Runnable task){
+        tasks.put(touchAction, task);
+    }
+    public void removeTask(TouchAction touchAction){
+        if(tasks.containsKey(touchAction)){
+            tasks.remove(touchAction);
+        }
+    }
+    public void clearTasks(){
+        tasks.clear();
+    }
+
+    public void setFlickTask(Consumer<FlickState> task){
+        flickTask = task;
     }
 
     public void onInteract(MotionEvent event){
@@ -49,7 +79,43 @@ public class InteractableComponent extends Component{
             return;
         }
 
-        tasks.get(event.getAction()).run();
+        TouchAction touchAction = null;
+        switch(event.getAction()){
+            case MotionEvent.ACTION_DOWN:
+                touchAction = TouchAction.Down;
+                break;
+            case MotionEvent.ACTION_MOVE:
+                touchAction = TouchAction.Move;
+                break;
+            case MotionEvent.ACTION_UP:
+                touchAction = TouchAction.Up;
+                break;
+        }
+
+        if(touchAction != null){
+            tasks.get(touchAction).run();
+        }
+    }
+
+    public void onLongPress(){
+        if(tasks.containsKey(TouchAction.LongPress)){
+            tasks.get(TouchAction.LongPress).run();
+        }
+    }
+
+    public void onDoubleTap(){
+        if(tasks.containsKey(TouchAction.DoubleTap)){
+            tasks.get(TouchAction.DoubleTap).run();
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public void onFling(MotionEvent firstMotionEvent, MotionEvent lastMotionEvent, float horizontalVelocity, float verticalVelocity){
+        if(!interactable || flickTask == null){
+            return;
+        }
+
+        flickTask.accept(new FlickState(firstMotionEvent, lastMotionEvent, horizontalVelocity, verticalVelocity));
     }
 
     public boolean isInteractable(){
@@ -57,18 +123,6 @@ public class InteractableComponent extends Component{
     }
     public void setInteractable(boolean value){
         this.interactable = value;
-    }
-
-    public void addTask(int action, Runnable task){
-        tasks.put(action, task);
-    }
-    public void removeTask(int action){
-        if(tasks.containsKey(action)){
-            tasks.remove(action);
-        }
-    }
-    public void clearTasks(){
-        tasks.clear();
     }
 
 }

@@ -5,6 +5,7 @@ import android.os.Build;
 import android.view.MotionEvent;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import androidx.annotation.RequiresApi;
@@ -59,11 +60,6 @@ abstract class Level{
             actors.add(actor);
         }
     }
-    public void removeActor(Actor actor){
-        if(actors.contains(actor) && actor.getState() == Actor.State.Deleted){
-            actors.remove(actor);
-        }
-    }
 
     public void addDrawable(DrawableComponent drawable){
         if(graphicsManager != null){
@@ -106,9 +102,11 @@ abstract class Level{
         }
         pendingActors.clear();
 
-        for(Actor actor : actors){
+        Iterator iterator = actors.iterator();
+        while(iterator.hasNext()){
+            Actor actor = (Actor)iterator.next();
             if(actor.getState() == Actor.State.Deleted){
-                removeActor(actor);
+                iterator.remove();
             }
         }
     }
@@ -141,6 +139,10 @@ abstract class Level{
 
     public AudioManager getAudioManager(){
         return audioManager;
+    }
+
+    public TouchEventManager getTouchEventManager(){
+        return touchEventManager;
     }
 
     public boolean isLoadCompleted(){

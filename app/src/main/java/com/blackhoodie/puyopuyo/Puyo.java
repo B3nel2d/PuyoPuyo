@@ -18,7 +18,7 @@ public class Puyo extends Actor{
 
     private boolean fixed;
 
-    private static final Vector2D size = new Vector2D(125, 125);
+    public static final Vector2D size = new Vector2D(125, 125);
 
     private UITransformComponent uiTransformComponent;
     private ImageComponent imageComponent;
@@ -30,6 +30,7 @@ public class Puyo extends Actor{
     @Override
     public void initialize(){
         color = null;
+
         dropSpeed = 0.0f;
         fixed = false;
 
@@ -41,19 +42,8 @@ public class Puyo extends Actor{
 
     @Override
     public void update(){
-        switch(((GameLevel)owner).getCurrentPhase()){
-            case Drop:
-                drop();
-
-                break;
-            case Erace:
-                break;
-            case Control:
-                fall();
-
-                break;
-        }
-
+        drop();
+        fall();
         ground();
     }
 
@@ -79,23 +69,22 @@ public class Puyo extends Actor{
             return;
         }
 
-        int row = (int)GameLevel.getCoordinateFromPosition(uiTransformComponent.getPosition()).x;
+        int row = (int)((GameLevel)owner).getCoordinateFromPosition(uiTransformComponent.getPosition()).x;
         int groundHeight = GameLevel.boardColumnCount - 1;
 
         for(int column = GameLevel.boardColumnCount - 1; 0 <= column; column--){
-            if(((GameLevel)owner).getBoard()[row][column] == null){
+            if(((GameLevel)owner).getPuyo(row, column) == null){
                 groundHeight = column;
                 break;
             }
         }
 
-        if(GameLevel.getPositionFromCoordinate(row, groundHeight).y <= uiTransformComponent.getPosition().y){
-            uiTransformComponent.setPosition(GameLevel.getPositionFromCoordinate(row, groundHeight));
+        if(((GameLevel)owner).getPositionFromCoordinate(row, groundHeight).y <= uiTransformComponent.getPosition().y){
+            uiTransformComponent.setPosition(((GameLevel)owner).getPositionFromCoordinate(row, groundHeight));
             ((GameLevel)owner).setPuyo(row, groundHeight, this);
             fixed = true;
-            resetDropSpeed();
 
-            ((GameLevel)owner).dropAllPuyo();
+            resetDropSpeed();
         }
     }
 
@@ -124,19 +113,15 @@ public class Puyo extends Actor{
         }
     }
 
+    public void resetDropSpeed(){
+        dropSpeed = 0.0f;
+    }
+
     public boolean isFixed(){
         return fixed;
     }
     public void setFixed(boolean value){
         fixed = value;
-    }
-
-    public void resetDropSpeed(){
-        dropSpeed = 0.0f;
-    }
-
-    public static Vector2D getSize(){
-        return size;
     }
 
     public UITransformComponent getUiTransformComponent(){

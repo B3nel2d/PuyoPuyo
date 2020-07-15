@@ -58,6 +58,23 @@ abstract class Actor{
         }
     }
 
+    public void delete(){
+        state = State.Deleted;
+        dispose();
+    }
+
+    public void dispose(){
+        for(Component component : components){
+            if(component instanceof DrawableComponent){
+                owner.getGraphicsManager().removeDrawable((DrawableComponent)component);
+            }
+
+            if(component instanceof InteractableComponent){
+                owner.getTouchEventManager().removeInteractable((InteractableComponent)component);
+            }
+        }
+    }
+
     public Level getOwner(){
         return owner;
     }

@@ -2,6 +2,8 @@ package com.blackhoodie.puyopuyo;
 
 import android.os.Build;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import androidx.annotation.RequiresApi;
@@ -9,8 +11,9 @@ import androidx.annotation.RequiresApi;
 public class GameLevel extends Level{
 
     public enum Phase{
+        Start,
         Drop,
-        Erace,
+        Erase,
         Control,
         Gameover
     }
@@ -24,17 +27,22 @@ public class GameLevel extends Level{
 
     private Phase currentPhase;
 
-    private Puyo[][] board;
-    public static final int boardRowCount = 6;
-    public static final int boardColumnCount = 12;
-    public static final Vector2D boardSize = new Vector2D(Puyo.getSize().x * boardRowCount, Puyo.getSize().y * boardColumnCount);
-
     private Puyo centerPuyo;
     private Puyo movablePuyo;
 
     private Direction movablePuyoDirection;
 
+    private List<Puyo> puyos;
+
+    private Puyo[][] board;
+    public static final int boardRowCount = 6;
+    public static final int boardColumnCount = 12;
+    public static final Vector2D boardSize = new Vector2D(Puyo.size.x * boardRowCount, Puyo.size.y * boardColumnCount);
+    private final Vector2D gameOverCoordinate = new Vector2D(2, 0);
+
     private final float minimumFlickVelocity = 10.0f;
+
+    private final int puyoCountToErase = 4;
 
     private ImageActor boardImage;
     private TouchPanel touchPanel;
@@ -49,13 +57,15 @@ public class GameLevel extends Level{
     public void initializeActors(){
         currentPhase = Phase.Control;
 
-        board = new Puyo[boardRowCount][boardColumnCount];
-        clearBoard();
-
         centerPuyo = null;
         movablePuyo = null;
 
         movablePuyoDirection = null;
+
+        puyos = new ArrayList<Puyo>();
+
+        board = new Puyo[boardRowCount][boardColumnCount];
+        clearBoard();
 
         graphicsManager.addBitmap("images/board.png", "Board");
         graphicsManager.addBitmap("images/red-puyo.png", "Red Puyo");
@@ -79,90 +89,152 @@ public class GameLevel extends Level{
         touchPanel.getInteractableComponent().addTask(InteractableComponent.TouchAction.LongPress, this::dropPuyo);
         touchPanel.getInteractableComponent().setFlickTask(this::onFling);
 
-        spawnPuyo();
+        startGame();
     }
 
     @Override
     public void update(){
         switch(currentPhase){
             case Drop:
-                if(checkAllPuyoFixed()){
-                    currentPhase = Phase.Erace;
-                }
-
-                break;
-            case Erace:
-                if(checkAllPuyoEraced()){
-                    spawnPuyo();
-                }
-                else{
-                    dropAllPuyo();
+                if(areAllPuyosFixed()){
+                    if(isGameOver()){
+                        finishGame();
+                    }
+                    else{
+                        eraseAllPuyos();
+                    }
                 }
 
                 break;
             case Control:
+                if(centerPuyo.isFixed() || movablePuyo.isFixed()){
+                    dropAllPuyos();
+                }
 
                 break;
         }
-
-        System.out.println("Phase: " + currentPhase);
     }
 
-    public void dropAllPuyo(){
+    private void startGame(){
+        spawnPuyo();
+    }
+
+    public void dropAllPuyos(){
         currentPhase = Phase.Drop;
 
         for(int row = 0; row < boardRowCount; row++){
             boolean aboveSpace = false;
 
             for(int column = boardColumnCount - 1; 0 <= column; column--){
-                if(board[row][column] == null){
+                if(getPuyo(row, column) == null){
                     aboveSpace = true;
                 }
                 else{
                     if(aboveSpace){
+                        getPuyo(row, column).setFixed(false);
                         setPuyo(row, column, null);
-                        board[row][column].setFixed(false);
                     }
                 }
             }
         }
     }
 
-    private boolean checkAllPuyoFixed(){
-        if(!centerPuyo.isFixed() || !movablePuyo.isFixed()){
-            return false;
-        }
-
-        for(int row = 0; row < boardRowCount; row++){
-            for(int column = 0; column < boardColumnCount; column++){
-                if(board[row][column] != null && !board[row][column].isFixed()){
-                    return false;
-                }
+    private boolean areAllPuyosFixed(){
+        for(Puyo puyo : puyos){
+            if(!puyo.isFixed()){
+                return false;
             }
         }
 
         return true;
     }
 
-    private boolean checkAllPuyoEraced(){
-        return true;
+    private boolean isGameOver(){
+        if(getPuyo(gameOverCoordinate) != null){
+            return true;
+        }
+
+        return false;
     }
 
-    private void EracePuyos(){
+    private void finishGame(){
 
+    }
 
-        dropAllPuyo();
+    private void eraseAllPuyos(){
+        currentPhase = Phase.Erase;
+
+        List<Puyo> puyosToErase = new ArrayList<Puyo>();
+        boolean erased = false;
+
+        for(int row = 0; row < boardRowCount; row++){
+            for(int column = 0; column < boardColumnCount; column++){
+                ArrayList<Puyo> connectedPuyos = new ArrayList<Puyo>();
+
+                Puyo puyo = getPuyo(row, column);
+                if(puyo != null && !puyosToErase.contains(puyo)){
+                    getConnectedPuyos(puyo, connectedPuyos);
+
+                    if(puyoCountToErase <= connectedPuyos.size()){
+                        for(Puyo connectedPuyo : connectedPuyos){
+                            if(!puyosToErase.contains(connectedPuyo)){
+                                puyosToErase.add(connectedPuyo);
+                            }
+                        }
+
+                        erased = true;
+                    }
+                }
+            }
+        }
+
+        if(erased){
+            for(Puyo puyo : puyosToErase){
+                puyos.remove(puyo);
+                setPuyo(getCoordinateFromPosition(puyo.getUiTransformComponent().getPosition()), null);
+                puyo.delete();
+            }
+
+            dropAllPuyos();
+        }
+        else{
+            spawnPuyo();
+        }
+    }
+
+    private void getConnectedPuyos(Puyo puyo, ArrayList<Puyo> connectedPuyos){
+        List<Vector2D> adjacentCoordinates = new ArrayList<Vector2D>();
+        Vector2D targetPuyoCoordinate = getCoordinateFromPosition(puyo.getUiTransformComponent().getPosition());
+
+        adjacentCoordinates.add(new Vector2D(targetPuyoCoordinate.x + 1, targetPuyoCoordinate.y));
+        adjacentCoordinates.add(new Vector2D(targetPuyoCoordinate.x, targetPuyoCoordinate.y + 1));
+        adjacentCoordinates.add(new Vector2D(targetPuyoCoordinate.x - 1, targetPuyoCoordinate.y));
+        adjacentCoordinates.add(new Vector2D(targetPuyoCoordinate.x, targetPuyoCoordinate.y - 1));
+
+        for(Vector2D coordinate : adjacentCoordinates){
+            Puyo adjacentPuyo = getPuyo(coordinate);
+            if(adjacentPuyo != null && adjacentPuyo.getColor() == puyo.getColor()){
+                if(!connectedPuyos.contains(puyo)){
+                    connectedPuyos.add(puyo);
+                }
+                if(!connectedPuyos.contains(adjacentPuyo)){
+                    getConnectedPuyos(adjacentPuyo, connectedPuyos);
+                }
+            }
+        }
     }
 
     private void spawnPuyo(){
         currentPhase = Phase.Control;
 
         centerPuyo = new Puyo(this, "Puyo");
+        puyos.add(centerPuyo);
         centerPuyo.getUiTransformComponent().setPosition(getPositionFromCoordinate(2, -1));
         centerPuyo.setColor(Puyo.Color.values()[new Random().nextInt(Puyo.Color.values().length)]);
         centerPuyo.getImageComponent().setDrawOrder(1);
 
         movablePuyo = new Puyo(this, "Puyo");
+        puyos.add(movablePuyo);
         movablePuyo.getUiTransformComponent().setPosition(getPositionFromCoordinate(2, -2));
         movablePuyo.setColor(Puyo.Color.values()[new Random().nextInt(Puyo.Color.values().length)]);
         movablePuyo.getImageComponent().setDrawOrder(1);
@@ -197,16 +269,16 @@ public class GameLevel extends Level{
 
         switch(direction){
             case Left:
-                if(checkAdjacentSpace(centerPuyo, Direction.Left) && checkAdjacentSpace(movablePuyo, Direction.Left)){
-                    centerPuyo.getUiTransformComponent().translate(-Puyo.getSize().x, 0);
-                    movablePuyo.getUiTransformComponent().translate(-Puyo.getSize().x, 0);
+                if(adjacentSpaceExists(centerPuyo, Direction.Left) && adjacentSpaceExists(movablePuyo, Direction.Left)){
+                    centerPuyo.getUiTransformComponent().translate(-Puyo.size.x, 0);
+                    movablePuyo.getUiTransformComponent().translate(-Puyo.size.x, 0);
                 }
 
                 break;
             case Right:
-                if(checkAdjacentSpace(centerPuyo, Direction.Right) && checkAdjacentSpace(movablePuyo, Direction.Right)){
-                    centerPuyo.getUiTransformComponent().translate(Puyo.getSize().x, 0);
-                    movablePuyo.getUiTransformComponent().translate(Puyo.getSize().x, 0);
+                if(adjacentSpaceExists(centerPuyo, Direction.Right) && adjacentSpaceExists(movablePuyo, Direction.Right)){
+                    centerPuyo.getUiTransformComponent().translate(Puyo.size.x, 0);
+                    movablePuyo.getUiTransformComponent().translate(Puyo.size.x, 0);
                 }
 
                 break;
@@ -223,43 +295,43 @@ public class GameLevel extends Level{
 
         switch(movablePuyoDirection){
             case Up:
-                if(checkAdjacentSpace(centerPuyo, Direction.Right)){
-                    movablePuyo.getUiTransformComponent().translate(Puyo.getSize().x, Puyo.getSize().y);
+                if(adjacentSpaceExists(centerPuyo, Direction.Right)){
+                    movablePuyo.getUiTransformComponent().translate(Puyo.size.x, Puyo.size.y);
 
                     movablePuyoDirection = Direction.Right;
                 }
-                else if(checkAdjacentSpace(centerPuyo, Direction.Left)){
-                    centerPuyo.getUiTransformComponent().translate(-Puyo.getSize().x, 0);
-                    movablePuyo.getUiTransformComponent().translate(0, Puyo.getSize().y);
+                else if(adjacentSpaceExists(centerPuyo, Direction.Left)){
+                    centerPuyo.getUiTransformComponent().translate(-Puyo.size.x, 0);
+                    movablePuyo.getUiTransformComponent().translate(0, Puyo.size.y);
 
                     movablePuyoDirection = Direction.Right;
                 }
 
                 break;
             case Right:
-                if(checkAdjacentSpace(centerPuyo, Direction.Down)){
-                    movablePuyo.getUiTransformComponent().translate(-Puyo.getSize().x, Puyo.getSize().y);
+                if(adjacentSpaceExists(centerPuyo, Direction.Down)){
+                    movablePuyo.getUiTransformComponent().translate(-Puyo.size.x, Puyo.size.y);
 
                     movablePuyoDirection = Direction.Down;
                 }
 
                 break;
             case Down:
-                if(checkAdjacentSpace(centerPuyo, Direction.Left)){
-                    movablePuyo.getUiTransformComponent().translate(-Puyo.getSize().x, -Puyo.getSize().y);
+                if(adjacentSpaceExists(centerPuyo, Direction.Left)){
+                    movablePuyo.getUiTransformComponent().translate(-Puyo.size.x, -Puyo.size.y);
 
                     movablePuyoDirection = Direction.Left;
                 }
-                else if(checkAdjacentSpace(centerPuyo, Direction.Right)){
-                    centerPuyo.getUiTransformComponent().translate(Puyo.getSize().x, 0);
-                    movablePuyo.getUiTransformComponent().translate(0, -Puyo.getSize().y);
+                else if(adjacentSpaceExists(centerPuyo, Direction.Right)){
+                    centerPuyo.getUiTransformComponent().translate(Puyo.size.x, 0);
+                    movablePuyo.getUiTransformComponent().translate(0, -Puyo.size.y);
 
                     movablePuyoDirection = Direction.Left;
                 }
 
                 break;
             case Left:
-                movablePuyo.getUiTransformComponent().translate(Puyo.getSize().x, -Puyo.getSize().y);
+                movablePuyo.getUiTransformComponent().translate(Puyo.size.x, -Puyo.size.y);
 
                 movablePuyoDirection = Direction.Up;
 
@@ -275,10 +347,10 @@ public class GameLevel extends Level{
             return;
         }
 
-        dropAllPuyo();
+        dropAllPuyos();
     }
 
-    private boolean checkAdjacentSpace(Puyo puyo, Direction direction){
+    private boolean adjacentSpaceExists(Puyo puyo, Direction direction){
         if(puyo == null){
             return false;
         }
@@ -320,37 +392,41 @@ public class GameLevel extends Level{
         }
     }
 
-    public static Vector2D getPositionFromCoordinate(Vector2D coordinate){
-        Vector2D position = Game.getInstance().getScreenSize().multiply(0.5f).subtract(boardSize.multiply(0.5f));
-        position = position.add(coordinate.multiply(Puyo.getSize()));
-        position = position.add(Puyo.getSize().multiply(0.5f));
+    @Override
+    public void dispose(){
+        super.dispose();
+
+        puyos.clear();
+        clearBoard();
+    }
+
+    public Vector2D getPositionFromCoordinate(Vector2D coordinate){
+        Vector2D position = boardImage.getUITransformComponent().getPosition().subtract(boardSize.multiply(0.5f));
+        position = position.add(coordinate.multiply(Puyo.size));
+        position = position.add(Puyo.size.multiply(0.5f));
 
         return position;
     }
-    public static Vector2D getPositionFromCoordinate(int x, int y){
+    public Vector2D getPositionFromCoordinate(int x, int y){
         return getPositionFromCoordinate(new Vector2D(x, y));
     }
 
-    public static Vector2D getCoordinateFromPosition(Vector2D position){
-        Vector2D fixedPosition = position.subtract(Game.getInstance().getScreenSize().multiply(0.5f).subtract(boardSize.multiply(0.5f)));
-        fixedPosition = fixedPosition.subtract(Puyo.getSize().multiply(0.5f));
+    public Vector2D getCoordinateFromPosition(Vector2D position){
+        Vector2D fixedPosition = position.subtract(boardImage.getUITransformComponent().getPosition()).add(boardSize.multiply(0.5f));
+        fixedPosition = fixedPosition.subtract(Puyo.size.multiply(0.5f));
 
-        Vector2D coordinate = fixedPosition.devide(Puyo.getSize());
+        Vector2D coordinate = fixedPosition.devide(Puyo.size);
         coordinate.x = (float)Math.round(coordinate.x);
         coordinate.y = (float)Math.round(coordinate.y);
 
         return coordinate;
     }
-    public static Vector2D getCoordinateFromPosition(float x, float y){
+    public Vector2D getCoordinateFromPosition(float x, float y){
         return getCoordinateFromPosition(new Vector2D(x, y));
     }
 
     public Phase getCurrentPhase(){
         return currentPhase;
-    }
-
-    public Puyo[][] getBoard(){
-        return board;
     }
 
     public Puyo getPuyo(Vector2D coordinate){
@@ -364,6 +440,10 @@ public class GameLevel extends Level{
         return this.getPuyo(new Vector2D(x, y));
     }
     public void setPuyo(Vector2D coordinate, Puyo puyo){
+        if(coordinate.x < 0 || boardRowCount <= coordinate.x || coordinate.y < 0 || boardColumnCount <= coordinate.y){
+            return;
+        }
+
         board[(int)coordinate.x][(int)coordinate.y] = puyo;
     }
     public void setPuyo(int x, int y, Puyo puyo){

@@ -72,7 +72,7 @@ public class Puyo extends Actor{
         int row = (int)((GameLevel)owner).getCoordinateFromPosition(uiTransformComponent.getPosition()).x;
         int groundHeight = GameLevel.boardColumnCount - 1;
 
-        for(int column = GameLevel.boardColumnCount - 1; 0 <= column; column--){
+        for(int column = GameLevel.boardColumnCount - 1; -1 <= column; column--){
             if(((GameLevel)owner).getPuyo(row, column) == null){
                 groundHeight = column;
                 break;
@@ -80,9 +80,15 @@ public class Puyo extends Actor{
         }
 
         if(((GameLevel)owner).getPositionFromCoordinate(row, groundHeight).y <= uiTransformComponent.getPosition().y){
-            uiTransformComponent.setPosition(((GameLevel)owner).getPositionFromCoordinate(row, groundHeight));
-            ((GameLevel)owner).setPuyo(row, groundHeight, this);
-            fixed = true;
+            if(0 <= groundHeight){
+                uiTransformComponent.setPosition(((GameLevel)owner).getPositionFromCoordinate(row, groundHeight));
+                ((GameLevel)owner).setPuyo(row, groundHeight, this);
+
+                fixed = true;
+            }
+            else{
+                ((GameLevel)owner).erasePuyo(this);
+            }
 
             resetDropSpeed();
         }

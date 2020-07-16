@@ -96,6 +96,7 @@ public class GraphicsManager{
 
         for(DrawableComponent drawable : pendingDrawables){
             drawables.add(drawable);
+            Collections.sort(drawables, (drawable1, drawable2) -> drawable1.getDrawOrder() - drawable2.getDrawOrder());
         }
         pendingDrawables.clear();
     }

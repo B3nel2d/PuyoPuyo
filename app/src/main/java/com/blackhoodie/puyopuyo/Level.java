@@ -149,4 +149,9 @@ abstract class Level{
         return loadCompleted;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public Actor getActor(String name){
+        return actors.stream().filter(target -> target.getName() == name).findFirst().orElse(null);
+    }
+
 }

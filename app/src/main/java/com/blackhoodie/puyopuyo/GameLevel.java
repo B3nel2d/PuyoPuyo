@@ -1,5 +1,6 @@
 package com.blackhoodie.puyopuyo;
 
+import android.graphics.Color;
 import android.os.Build;
 
 import java.util.ArrayList;
@@ -12,10 +13,10 @@ public class GameLevel extends Level{
 
     public enum Phase{
         Start,
+        Control,
         Drop,
         Erase,
-        Control,
-        Gameover
+        GameOver
     }
 
     public enum Direction{
@@ -36,15 +37,22 @@ public class GameLevel extends Level{
 
     private Puyo[][] board;
     public static final int boardRowCount = 6;
-    public static final int boardColumnCount = 12;
+    public static final int boardColumnCount = 13;
     public static final Vector2D boardSize = new Vector2D(Puyo.size.x * boardRowCount, Puyo.size.y * boardColumnCount);
-    private final Vector2D gameOverCoordinate = new Vector2D(2, 0);
-
-    private final float minimumFlickVelocity = 10.0f;
 
     private final int puyoCountToErase = 4;
+    private final Vector2D gameOverCoordinate = new Vector2D(2, 1);
+    private final float minimumFlickVelocity = 10.0f;
 
+    private int score;
+    private final int scoreLimit = 99999999;
+    private int chainCount;
+
+    private ImageActor backgroundImage;
     private ImageActor boardImage;
+    private ImageActor coverImage;
+
+    private TextActor scoreText;
     private TouchPanel touchPanel;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -55,7 +63,7 @@ public class GameLevel extends Level{
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void initializeActors(){
-        currentPhase = Phase.Control;
+        currentPhase = Phase.Start;
 
         centerPuyo = null;
         movablePuyo = null;
@@ -63,10 +71,12 @@ public class GameLevel extends Level{
         movablePuyoDirection = null;
 
         puyos = new ArrayList<Puyo>();
-
         board = new Puyo[boardRowCount][boardColumnCount];
-        clearBoard();
 
+        score = 0;
+        chainCount = 0;
+
+        graphicsManager.addBitmap("images/background.png", "Background");
         graphicsManager.addBitmap("images/board.png", "Board");
         graphicsManager.addBitmap("images/red-puyo.png", "Red Puyo");
         graphicsManager.addBitmap("images/green-puyo.png", "Green Puyo");
@@ -76,11 +86,30 @@ public class GameLevel extends Level{
 
         skipLoad();
 
+        backgroundImage = new ImageActor(this, "Background Image");
+        backgroundImage.getUITransformComponent().setSize(Game.getInstance().getScreenSize());
+        backgroundImage.getUITransformComponent().setPosition(Game.getInstance().getScreenSize().x / 2.0f, Game.getInstance().getScreenSize().y / 2.0f);
+        backgroundImage.getImageComponent().setBitmap(graphicsManager.getBitmap("Background"));
+        backgroundImage.getImageComponent().setDrawOrder(0);
+
         boardImage = new ImageActor(this, "Board Image");
         boardImage.getUITransformComponent().setSize(boardSize);
-        boardImage.getUITransformComponent().setPosition(Game.getInstance().getScreenSize().x / 2, Game.getInstance().getScreenSize().y / 2);
+        boardImage.getUITransformComponent().setPosition(Game.getInstance().getScreenSize().x / 2.0f, Game.getInstance().getScreenSize().y / 2.0f + -50);
         boardImage.getImageComponent().setBitmap(graphicsManager.getBitmap("Board"));
         boardImage.getImageComponent().setDrawOrder(0);
+
+        coverImage = new ImageActor(this, "Cover Image");
+        coverImage.getUITransformComponent().setSize(boardSize.x, Puyo.size.y * 2);
+        coverImage.getUITransformComponent().setPosition(boardImage.getUITransformComponent().getPosition().x, boardImage.getUITransformComponent().getPosition().y - boardImage.getUITransformComponent().getSize().y / 2.0f);
+        coverImage.getImageComponent().setBitmap(graphicsManager.getBitmap("Background"));
+        coverImage.getImageComponent().setDrawOrder(3);
+
+        scoreText = new TextActor(this, "Score Text");
+        scoreText.getUITransformComponent().setPosition(boardImage.getUITransformComponent().getPosition().x - 100, boardImage.getUITransformComponent().getPosition().y + boardImage.getUITransformComponent().getSize().y / 2 + 50);
+        scoreText.getTextComponent().setText("SCORE: " + score);
+        scoreText.getTextComponent().getPaint().setTextSize(50);
+        scoreText.getTextComponent().getPaint().setColor(Color.WHITE);
+        scoreText.getTextComponent().setDrawOrder(1);
 
         touchPanel = new TouchPanel(this, "Touch Panel");
         touchPanel.getUiTransformComponent().setSize(Game.getInstance().getScreenSize());
@@ -92,9 +121,16 @@ public class GameLevel extends Level{
         startGame();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void update(){
         switch(currentPhase){
+            case Control:
+                if(centerPuyo.isFixed() || movablePuyo.isFixed()){
+                    dropAllPuyos();
+                }
+
+                break;
             case Drop:
                 if(areAllPuyosFixed()){
                     if(isGameOver()){
@@ -106,17 +142,29 @@ public class GameLevel extends Level{
                 }
 
                 break;
-            case Control:
-                if(centerPuyo.isFixed() || movablePuyo.isFixed()){
-                    dropAllPuyos();
-                }
-
-                break;
         }
     }
 
     private void startGame(){
         spawnPuyo();
+    }
+
+    private void spawnPuyo(){
+        currentPhase = Phase.Control;
+
+        centerPuyo = new Puyo(this, "Puyo");
+        puyos.add(centerPuyo);
+        centerPuyo.getUiTransformComponent().setPosition(getPositionFromCoordinate(2, 0));
+        centerPuyo.setColor(Puyo.Color.values()[new Random().nextInt(Puyo.Color.values().length)]);
+        centerPuyo.getImageComponent().setDrawOrder(1);
+
+        movablePuyo = new Puyo(this, "Puyo");
+        puyos.add(movablePuyo);
+        movablePuyo.getUiTransformComponent().setPosition(getPositionFromCoordinate(2, -1));
+        movablePuyo.setColor(Puyo.Color.values()[new Random().nextInt(Puyo.Color.values().length)]);
+        movablePuyo.getImageComponent().setDrawOrder(1);
+
+        movablePuyoDirection = Direction.Up;
     }
 
     public void dropAllPuyos(){
@@ -161,11 +209,14 @@ public class GameLevel extends Level{
 
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     private void eraseAllPuyos(){
         currentPhase = Phase.Erase;
 
         List<Puyo> puyosToErase = new ArrayList<Puyo>();
         boolean erased = false;
+
+        int connectBonus = 0;
 
         for(int row = 0; row < boardRowCount; row++){
             for(int column = 0; column < boardColumnCount; column++){
@@ -182,6 +233,8 @@ public class GameLevel extends Level{
                             }
                         }
 
+                        connectBonus += calculateConnectBonus(connectedPuyos.size());
+
                         erased = true;
                     }
                 }
@@ -189,17 +242,36 @@ public class GameLevel extends Level{
         }
 
         if(erased){
+            int colorCount = 0;
+            for(Puyo.Color color : Puyo.Color.values()){
+                if(puyosToErase.stream().anyMatch(target -> target.getColor() == color)){
+                    colorCount++;
+                }
+            }
+
+            chainCount++;
+            addScore(puyosToErase.size(), calculateChainBonus(chainCount), connectBonus, calculateColorBonus(colorCount));
+
             for(Puyo puyo : puyosToErase){
-                puyos.remove(puyo);
-                setPuyo(getCoordinateFromPosition(puyo.getUiTransformComponent().getPosition()), null);
-                puyo.delete();
+                erasePuyo(puyo);
             }
 
             dropAllPuyos();
         }
         else{
+            chainCount = 0;
             spawnPuyo();
         }
+    }
+
+    public void erasePuyo(Puyo puyo){
+        if(puyo == null){
+            return;
+        }
+
+        puyos.remove(puyo);
+        setPuyo(getCoordinateFromPosition(puyo.getUiTransformComponent().getPosition()), null);
+        puyo.delete();
     }
 
     private void getConnectedPuyos(Puyo puyo, ArrayList<Puyo> connectedPuyos){
@@ -222,24 +294,6 @@ public class GameLevel extends Level{
                 }
             }
         }
-    }
-
-    private void spawnPuyo(){
-        currentPhase = Phase.Control;
-
-        centerPuyo = new Puyo(this, "Puyo");
-        puyos.add(centerPuyo);
-        centerPuyo.getUiTransformComponent().setPosition(getPositionFromCoordinate(2, -1));
-        centerPuyo.setColor(Puyo.Color.values()[new Random().nextInt(Puyo.Color.values().length)]);
-        centerPuyo.getImageComponent().setDrawOrder(1);
-
-        movablePuyo = new Puyo(this, "Puyo");
-        puyos.add(movablePuyo);
-        movablePuyo.getUiTransformComponent().setPosition(getPositionFromCoordinate(2, -2));
-        movablePuyo.setColor(Puyo.Color.values()[new Random().nextInt(Puyo.Color.values().length)]);
-        movablePuyo.getImageComponent().setDrawOrder(1);
-
-        movablePuyoDirection = Direction.Up;
     }
 
     private void onFling(FlickState flickState){
@@ -390,6 +444,54 @@ public class GameLevel extends Level{
                 board[i][j] = null;
             }
         }
+    }
+
+    private int calculateChainBonus(int chainCount){
+        if(chainCount <= 1){
+            return 0;
+        }
+        else if(chainCount <= 5){
+            return (int)Math.pow(2, chainCount + 1);
+        }
+
+        return 64 + 32 * (chainCount - 5);
+    }
+
+    private int calculateConnectBonus(int connectCount){
+        if(connectCount <= 4){
+            return 0;
+        }
+        else if(connectCount <= 10){
+            return 1 + connectCount - 4;
+        }
+
+        return 10;
+    }
+
+    private int calculateColorBonus(int colorCount){
+        if(colorCount <= 1){
+            return 0;
+        }
+
+        return 3 * (int)Math.pow(2, colorCount - 2);
+    }
+
+    private void addScore(int erasedCount, int chainBonus, int connectBonus, int colorBonus){
+        int additionalScore = erasedCount * (chainBonus + connectBonus + colorBonus) * 10;
+        if(additionalScore == 0){
+            additionalScore = 1;
+        }
+
+        score += additionalScore;
+        if(scoreLimit < score){
+            score = scoreLimit;
+        }
+
+        updateScoreText();
+    }
+
+    private void updateScoreText(){
+        scoreText.getTextComponent().setText("SCORE: " + score);
     }
 
     @Override

@@ -10,10 +10,11 @@ import java.util.Random;
 import androidx.annotation.RequiresApi;
 
 /**
- *
+ * ゲームレベルを定義するクラス
  */
 public class GameLevel extends Level{
 
+    /** ゲームの処理段階 */
     public enum Phase{
         Start,
         Control,
@@ -22,6 +23,7 @@ public class GameLevel extends Level{
         GameOver
     }
 
+    /** 方向 */
     public enum Direction{
         Up,
         Down,
@@ -29,56 +31,94 @@ public class GameLevel extends Level{
         Right
     }
 
+    /** 現在の処理段階 */
     private Phase currentPhase;
 
+    /** 軸ぷよ */
     private Puyo centerPuyo;
+    /** 子ぷよ */
     private Puyo movablePuyo;
 
+    /** 軸ぷよから見た子ぷよの方向 */
     private Direction movablePuyoDirection;
 
+    /** 次（とその次）の軸ぷよの色 */
     private Puyo.Color[] nextCenterPuyoColors;
+    /** 次（とその次）の子ぷよの色 */
     private Puyo.Color[] nextMovablePuyoColors;
 
+    /** ぷよのリスト */
     private List<Puyo> puyos;
 
+    /** フィールド */
     private Puyo[][] board;
+    /** フィールドの横の単位 */
     public static final int boardRowCount = 6;
+    /** フィールドの縦の単位 */
     public static final int boardColumnCount = 13;
+    /** フィールドのサイズ */
     public static final Vector2D boardSize = new Vector2D(Puyo.size.x * boardRowCount, Puyo.size.y * boardColumnCount);
 
+    /** 繋がったぷよが消える個数 */
     private final int puyoCountToErase = 4;
+    /** ゲームオーバーになるフィールド座標 */
     private final Vector2D gameOverCoordinate = new Vector2D(2, 1);
+    /** 最小のフリック加速度 */
     private final float minimumFlickVelocity = 10.0f;
 
+    /** スコア */
     private int score;
+    /** スコアの最大値 */
     private final int scoreLimit = 99999999;
+    /** 連鎖数 */
     private int chainCount;
 
+    /** スタートのタイマー */
     private float startTimer;
+    /** スタートまでの時間（秒） */
     private final float timeToStart = 3.0f;
 
+    /** ぷよ消去のタイマー */
     private float eraseTimer;
+    /** ぷよ消去までの時間（秒） */
     private final float timeToErase = 1.25f;
 
+    /** フィールド画像 */
     private ImageActor boardImage;
+    /** 背景画像 */
     private ImageActor backgroundImage;
+    /** カバー（フィールド13段目を隠す為）画像 */
     private ImageActor coverImage;
+
+    /** スコアテキスト */
     private TextActor scoreText;
-
+    /** 次のぷよのサインテキスト */
     private TextActor nextPuyoSignText;
+    /** 次（とその次）の軸ぷよの画像 */
     private ImageActor[] nextCenterPuyoImages;
+    /** 次（とその次）の子ぷよの画像 */
     private ImageActor[] nextMovablePuyoImages;
-
+    /** スタートのカウントダウンテキスト */
     private TextActor startTimerCountDownText;
 
+    /** ポップアップウィンドウ */
     private ImageActor popupWindow;
+    /** ゲームオーバーのサインテキスト */
     private TextActor gameOverSignText;
+    /** 注意書きのテキスト */
     private TextActor noticeText;
 
+    /** メインタッチパネル */
     private TouchPanel mainPanel;
+    /** 左タッチパネル */
     private TouchPanel leftPanel;
+    /** 右タッチパネル */
     private TouchPanel rightPanel;
 
+    /**
+     * コンストラクタ
+     * @param name レベル名
+     */
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public GameLevel(String name){
         super(name);
@@ -265,10 +305,17 @@ public class GameLevel extends Level{
         }
     }
 
+    /**
+     * スタートのカウントダウンテキストの更新
+     * @param text 新しいテキスト
+     */
     private void updateStartTimerCountDownText(String text){
         startTimerCountDownText.getTextComponent().setText(text);
     }
 
+    /**
+     * 次（とその次）のぷよを更新する
+     */
     private void updateNextPuyos(){
         if(nextCenterPuyoColors[0] == null){
             nextCenterPuyoColors[1] = Puyo.Color.values()[new Random().nextInt(Puyo.Color.values().length)];
@@ -293,12 +340,18 @@ public class GameLevel extends Level{
         nextMovablePuyoImages[0].getImageComponent().setBitmap(graphicsManager.getBitmap(nextMovablePuyoColors[0] + " Puyo"));
     }
 
+    /**
+     * ゲームを開始する
+     */
     @RequiresApi(api = Build.VERSION_CODES.N)
     private void startGame(){
         spawnPuyo();
         audioManager.playAudio("Game Start");
     }
 
+    /**
+     * 操作ぷよを出現させる
+     */
     private void spawnPuyo(){
         currentPhase = Phase.Control;
 
@@ -319,6 +372,9 @@ public class GameLevel extends Level{
         updateNextPuyos();
     }
 
+    /**
+     * 全てのぷよを自由落下させる
+     */
     public void dropAllPuyos(){
         currentPhase = Phase.Drop;
 
@@ -339,6 +395,10 @@ public class GameLevel extends Level{
         }
     }
 
+    /**
+     * 全てのぷよが固定されているか取得する
+     * @return 全てのぷよが固定されているか
+     */
     private boolean areAllPuyosFixed(){
         for(Puyo puyo : puyos){
             if(!puyo.isFixed()){
@@ -349,6 +409,10 @@ public class GameLevel extends Level{
         return true;
     }
 
+    /**
+     * ゲームオーバー条件を満たしているか取得する
+     * @return ゲームオーバー条件を満たしているか
+     */
     private boolean isGameOver(){
         if(getPuyo(gameOverCoordinate) != null){
             return true;
@@ -357,6 +421,9 @@ public class GameLevel extends Level{
         return false;
     }
 
+    /**
+     * ゲームを終了する
+     */
     @RequiresApi(api = Build.VERSION_CODES.N)
     private void finishGame(){
         currentPhase = Phase.GameOver;
@@ -365,6 +432,9 @@ public class GameLevel extends Level{
         audioManager.playAudio("Game Over");
     }
 
+    /**
+     * タイトルレベルへ戻る
+     */
     @RequiresApi(api = Build.VERSION_CODES.N)
     private void goBackToTitle(){
         if(currentPhase != Phase.GameOver){
@@ -374,6 +444,9 @@ public class GameLevel extends Level{
         Game.getInstance().loadLevel("Title Level");
     }
 
+    /**
+     * 全ての消去対象のぷよを消去する
+     */
     @RequiresApi(api = Build.VERSION_CODES.N)
     private void eraseAllPuyos(){
         currentPhase = Phase.Erase;
@@ -431,6 +504,10 @@ public class GameLevel extends Level{
         }
     }
 
+    /**
+     * ぷよを消去する
+     * @param puyo 消去するぷよ
+     */
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void erasePuyo(Puyo puyo){
         if(puyo == null){
@@ -442,6 +519,11 @@ public class GameLevel extends Level{
         puyo.delete();
     }
 
+    /**
+     * 同じ色のぷよと隣接しているぷよを取得する（引数のリストに保存する）
+     * @param puyo 対象のぷよ
+     * @param connectedPuyos 取得したぷよを保存するリスト
+     */
     private void getConnectedPuyos(Puyo puyo, ArrayList<Puyo> connectedPuyos){
         List<Vector2D> adjacentCoordinates = new ArrayList<Vector2D>();
         Vector2D targetPuyoCoordinate = getCoordinateFromPosition(puyo.getUiTransformComponent().getPosition());
@@ -464,6 +546,10 @@ public class GameLevel extends Level{
         }
     }
 
+    /**
+     * フリック時のイベント
+     * @param flickState フリック時の情報
+     */
     private void onFling(FlickState flickState){
         Vector2D flickVelocity = new Vector2D(flickState.getHorizontalVelocity(), flickState.getVerticalVelocity());
 
@@ -481,6 +567,10 @@ public class GameLevel extends Level{
         }
     }
 
+    /**
+     * 操作中のぷよを水平移動させる
+     * @param direction 移動する方向
+     */
     private void movePuyo(Direction direction){
         if(currentPhase != Phase.Control){
             return;
@@ -507,6 +597,9 @@ public class GameLevel extends Level{
         }
     }
 
+    /**
+     * 子ぷよを回転させる（時計回り）
+     */
     @RequiresApi(api = Build.VERSION_CODES.N)
     private void rotatePuyoClockwise(){
         if(currentPhase != Phase.Control){
@@ -573,6 +666,9 @@ public class GameLevel extends Level{
         }
     }
 
+    /**
+     * 子ぷよを回転させる（反時計回り）
+     */
     @RequiresApi(api = Build.VERSION_CODES.N)
     private void rotatePuyoCounterClockwise(){
         if(currentPhase != Phase.Control){
@@ -639,6 +735,9 @@ public class GameLevel extends Level{
         }
     }
 
+    /**
+     * 操作中のぷよを落とす
+     */
     private void dropPuyo(){
         if(currentPhase != Phase.Control){
             return;
@@ -650,6 +749,12 @@ public class GameLevel extends Level{
         dropAllPuyos();
     }
 
+    /**
+     * 対象ぷよの隣が空いているか取得する
+     * @param puyo 対象のぷよ
+     * @param direction 方向
+     * @return 隣が空いているか
+     */
     private boolean adjacentSpaceExists(Puyo puyo, Direction direction){
         if(puyo == null){
             return false;
@@ -684,6 +789,9 @@ public class GameLevel extends Level{
         return false;
     }
 
+    /**
+     * フィールドを初期化する
+     */
     private void clearBoard(){
         for(int i = 0; i < boardRowCount; i++){
             for(int j = 0; j < boardColumnCount; j++){
@@ -692,6 +800,11 @@ public class GameLevel extends Level{
         }
     }
 
+    /**
+     * 連鎖ボーナスを計算する
+     * @param chainCount 連鎖回数
+     * @return 連鎖ボーナス
+     */
     private int calculateChainBonus(int chainCount){
         if(chainCount <= 1){
             return 0;
@@ -703,6 +816,11 @@ public class GameLevel extends Level{
         return 64 + 32 * (chainCount - 5);
     }
 
+    /**
+     * 連結ボーナスを計算する
+     * @param connectCount 連結数
+     * @return 連鎖ボーナス
+     */
     private int calculateConnectBonus(int connectCount){
         if(connectCount <= 4){
             return 0;
@@ -714,6 +832,11 @@ public class GameLevel extends Level{
         return 10;
     }
 
+    /**
+     * 色数ボーナスを計算する
+     * @param colorCount 色数
+     * @return 色数ボーナス
+     */
     private int calculateColorBonus(int colorCount){
         if(colorCount <= 1){
             return 0;
@@ -722,6 +845,13 @@ public class GameLevel extends Level{
         return 3 * (int)Math.pow(2, colorCount - 2);
     }
 
+    /**
+     * スコアを計算し追加する
+     * @param erasedCount 消去したぷよの数
+     * @param chainBonus 連鎖ボーナス
+     * @param connectBonus 連鎖ボーナス
+     * @param colorBonus 色数ボーナス
+     */
     private void addScore(int erasedCount, int chainBonus, int connectBonus, int colorBonus){
         int additionalScore = erasedCount * (chainBonus + connectBonus + colorBonus) * 10;
         if(additionalScore == 0){
@@ -736,6 +866,9 @@ public class GameLevel extends Level{
         updateScoreText();
     }
 
+    /**
+     * スコアテキストを更新する
+     */
     private void updateScoreText(){
         scoreText.getTextComponent().setText("SCORE: " + score);
     }
@@ -749,6 +882,11 @@ public class GameLevel extends Level{
         clearBoard();
     }
 
+    /**
+     * フィールド座標からぷよの位置を取得する
+     * @param coordinate フィールド座標
+     * @return ぷよの位置
+     */
     public Vector2D getPositionFromCoordinate(Vector2D coordinate){
         Vector2D position = boardImage.getUITransformComponent().getPosition().subtract(boardSize.multiply(0.5f));
         position = position.add(coordinate.multiply(Puyo.size));
@@ -756,10 +894,21 @@ public class GameLevel extends Level{
 
         return position;
     }
+    /**
+     * フィールド座標からぷよの位置を取得する
+     * @param x フィールド座標のx成分
+     * @param y フィールド座標のy成分
+     * @return ぷよの位置
+     */
     public Vector2D getPositionFromCoordinate(int x, int y){
         return getPositionFromCoordinate(new Vector2D(x, y));
     }
 
+    /**
+     * 位置からぷよのフィールド座標を取得する
+     * @param position 位置
+     * @return ぷよのフィールド座標
+     */
     public Vector2D getCoordinateFromPosition(Vector2D position){
         Vector2D fixedPosition = position.subtract(boardImage.getUITransformComponent().getPosition()).add(boardSize.multiply(0.5f));
         fixedPosition = fixedPosition.subtract(Puyo.size.multiply(0.5f));
@@ -770,14 +919,29 @@ public class GameLevel extends Level{
 
         return coordinate;
     }
+    /**
+     * 位置からぷよのフィールド座標を取得する
+     * @param x 位置のx成分
+     * @param y 位置のy成分
+     * @return ぷよのフィールド座標
+     */
     public Vector2D getCoordinateFromPosition(float x, float y){
         return getCoordinateFromPosition(new Vector2D(x, y));
     }
 
+    /**
+     * 現在の処理段階を取得する
+     * @return 現在の処理段階
+     */
     public Phase getCurrentPhase(){
         return currentPhase;
     }
 
+    /**
+     * フィールド座標にあるぷよを取得する
+     * @param coordinate フィールド座標
+     * @return ぷよ
+     */
     public Puyo getPuyo(Vector2D coordinate){
         if(coordinate.x < 0 || boardRowCount <= coordinate.x || coordinate.y < 0 || boardColumnCount <= coordinate.y){
             return null;
@@ -785,9 +949,20 @@ public class GameLevel extends Level{
 
         return board[(int)coordinate.x][(int)coordinate.y];
     }
+    /**
+     * フィールド座標にあるぷよを取得する
+     * @param x フィールド座標のx成分
+     * @param y フィールド座標のy成分
+     * @return ぷよ
+     */
     public Puyo getPuyo(int x, int y){
         return this.getPuyo(new Vector2D(x, y));
     }
+    /**
+     * フィールド座標にぷよを設定する
+     * @param coordinate フィールド座標
+     * @param puyo ぷよ
+     */
     public void setPuyo(Vector2D coordinate, Puyo puyo){
         if(coordinate.x < 0 || boardRowCount <= coordinate.x || coordinate.y < 0 || boardColumnCount <= coordinate.y){
             return;
@@ -795,6 +970,12 @@ public class GameLevel extends Level{
 
         board[(int)coordinate.x][(int)coordinate.y] = puyo;
     }
+    /**
+     * フィールド座標にぷよを設定する
+     * @param x フィールド座標のx成分
+     * @param y フィールド座標のy成分
+     * @param puyo ぷよ
+     */
     public void setPuyo(int x, int y, Puyo puyo){
         this.setPuyo(new Vector2D(x, y), puyo);
     }

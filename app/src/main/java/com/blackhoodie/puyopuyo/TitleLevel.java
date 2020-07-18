@@ -6,17 +6,25 @@ import android.os.Build;
 import androidx.annotation.RequiresApi;
 
 /**
- * 
+ * タイトルレベルを定義するクラス
  */
 public class TitleLevel extends Level{
 
+    /** タイトルテキスト */
     private TextActor titleText;
 
+    /** スタートボタン */
     private ButtonActor startButton;
+    /** スタートボタンのテキスト */
     private TextActor startButtonText;
 
+    /** 背景画像 */
     private ImageActor backgroundImage;
 
+    /**
+     * コンストラクタ
+     * @param name レベル名
+     */
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public TitleLevel(String name){
         super(name);
@@ -66,6 +74,9 @@ public class TitleLevel extends Level{
 
     }
 
+    /**
+     * ゲームレベルへ移動する
+     */
     @RequiresApi(api = Build.VERSION_CODES.N)
     private void startGame(){
         audioManager.playAudio("Button Tap");

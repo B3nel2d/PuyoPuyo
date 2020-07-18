@@ -39,7 +39,7 @@ public class Game{
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public void initialize(){
         if(instance == null){
             instance = null;
@@ -52,21 +52,31 @@ public class Game{
 
         addLevel(new TitleLevel("Title Level"));
         addLevel(new GameLevel("Game Level"));
-        loadLevel("Game Level");
+        loadLevel("Title Level");
     }
 
     private void addLevel(Level level){
         levels.put(level.getName(), level);
     }
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public void loadLevel(String levelName){
+        if(!levels.containsKey(levelName)){
+            return;
+        }
+
+        Level previousLevel = null;
         if(currentLevel != null){
-            currentLevel.dispose();
+            previousLevel = currentLevel;
         }
 
         Level newLevel = levels.get(levelName);
-        newLevel.initialize();
         currentLevel = newLevel;
+        newLevel.initialize();
+
+        if(previousLevel != null){
+            previousLevel.dispose();
+        }
     }
 
     public void run() throws InterruptedException{
@@ -88,7 +98,7 @@ public class Game{
 
         frameStartTime = frameEndTime;
 
-        if(currentLevel != null && currentLevel.isLoadCompleted() && !paused){
+        if(currentLevel != null && currentLevel.isInitialized() && currentLevel.isLoadCompleted() && !paused){
             currentLevel.update();
             currentLevel.updateActors();
         }

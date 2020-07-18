@@ -14,11 +14,12 @@ abstract class Level{
 
     protected String name;
 
+    private boolean initialized;
+    protected boolean loadCompleted;
+
     protected GraphicsManager graphicsManager;
     protected AudioManager audioManager;
     protected TouchEventManager touchEventManager;
-
-    protected boolean loadCompleted;
 
     private List<Actor> actors;
     private List<Actor> pendingActors;
@@ -31,11 +32,12 @@ abstract class Level{
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void initialize(){
+        initialized = false;
+        loadCompleted = false;
+
         graphicsManager = new GraphicsManager(this);
         audioManager = new AudioManager(this);
         touchEventManager = new TouchEventManager(this);
-
-        loadCompleted = false;
 
         actors = new ArrayList<Actor>();
         pendingActors = new ArrayList<Actor>();
@@ -44,6 +46,8 @@ abstract class Level{
         initializeActors();
 
         audioManager.initialize();
+
+        initialized = true;
     }
 
     abstract void initializeActors();
@@ -66,6 +70,7 @@ abstract class Level{
             graphicsManager.addDrawable(drawable);
         }
     }
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public void removeDrawable(DrawableComponent drawable){
         if(graphicsManager != null){
             graphicsManager.removeDrawable(drawable);
@@ -77,6 +82,7 @@ abstract class Level{
             touchEventManager.addInteractable(interactable);
         }
     }
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public void removeInteractable(InteractableComponent interactable){
         if(touchEventManager != null){
             touchEventManager.removeInteractable(interactable);
@@ -123,7 +129,15 @@ abstract class Level{
         touchEventManager.onTouchEvent(motionEvent);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public void dispose(){
+        for(Actor actor : actors){
+            actor.dispose();
+        }
+
+        actors.clear();
+        pendingActors.clear();
+
         graphicsManager.dispose();
         audioManager.dispose();
         touchEventManager.dispose();
@@ -145,6 +159,9 @@ abstract class Level{
         return touchEventManager;
     }
 
+    public boolean isInitialized(){
+        return initialized;
+    }
     public boolean isLoadCompleted(){
         return loadCompleted;
     }

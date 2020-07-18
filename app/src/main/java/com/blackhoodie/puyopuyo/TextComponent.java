@@ -31,7 +31,10 @@ public class TextComponent extends DrawableComponent{
 
     public void draw(Canvas canvas){
         if(text != null && paint != null){
-            canvas.drawText(text, uiTransformComponent.getPosition().x - uiTransformComponent.getSize().x / 2.0f, uiTransformComponent.getPosition().y - uiTransformComponent.getSize().y / 2.0f, paint);
+            Vector2D position = uiTransformComponent.getPosition();
+            position = position.subtract(paint.measureText(text) / 2.0f, (paint.getFontMetrics().ascent + paint.getFontMetrics().descent) / 2.0f);
+
+            canvas.drawText(text, position.x, position.y, paint);
         }
     }
 

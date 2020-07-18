@@ -1,8 +1,12 @@
 package com.blackhoodie.puyopuyo;
 
-import java.util.ArrayList;
+import android.os.Build;
+
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import androidx.annotation.RequiresApi;
 
 abstract class Actor{
 
@@ -19,6 +23,8 @@ abstract class Actor{
 
     protected List<Component> components;
 
+    protected List<Actor> children;
+
     public Actor(Level owner, String name, State state){
         this.owner = owner;
         owner.addActor(this);
@@ -26,7 +32,9 @@ abstract class Actor{
         this.name = name;
         this.state = state;
 
-        components = new ArrayList<Component>();
+        components = new CopyOnWriteArrayList<Component>();
+
+        children = new CopyOnWriteArrayList<Actor>();
 
         initialize();
     }
@@ -40,9 +48,19 @@ abstract class Actor{
         components.add(component);
         Collections.sort(components, (component1, component2) -> component1.getUpdateOrder() - component2.getUpdateOrder());
     }
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public void removeComponent(Component component){
-        if(components.contains(component)){
-            components.remove(component);
+        components.removeIf(target -> target == component);
+    }
+
+    public void addChild(Actor actor){
+        if(!children.contains(actor)){
+            children.add(actor);
+        }
+    }
+    public void removeChild(Actor actor){
+        if(children.contains(actor)){
+            children.remove(actor);
         }
     }
 
@@ -58,11 +76,17 @@ abstract class Actor{
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public void delete(){
         state = State.Deleted;
         dispose();
+
+        for(Actor actor : children){
+            actor.delete();
+        }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public void dispose(){
         for(Component component : components){
             if(component instanceof DrawableComponent){
@@ -73,6 +97,9 @@ abstract class Actor{
                 owner.getTouchEventManager().removeInteractable((InteractableComponent)component);
             }
         }
+
+        components.clear();
+        children.clear();
     }
 
     public Level getOwner(){
@@ -91,6 +118,10 @@ abstract class Actor{
     }
     public void setState(State state){
         this.state = state;
+
+        for(Actor actor : children){
+            actor.setState(state);
+        }
     }
 
 }

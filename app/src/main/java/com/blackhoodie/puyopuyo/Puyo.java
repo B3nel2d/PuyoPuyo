@@ -1,5 +1,9 @@
 package com.blackhoodie.puyopuyo;
 
+import android.os.Build;
+
+import androidx.annotation.RequiresApi;
+
 public class Puyo extends Actor{
 
     public enum Color{
@@ -30,7 +34,6 @@ public class Puyo extends Actor{
     @Override
     public void initialize(){
         color = null;
-
         dropSpeed = 0.0f;
         fixed = false;
 
@@ -40,6 +43,7 @@ public class Puyo extends Actor{
         imageComponent = new ImageComponent(this, uiTransformComponent);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void update(){
         drop();
@@ -64,6 +68,7 @@ public class Puyo extends Actor{
         uiTransformComponent.translate(0, fallSpeed);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     private void ground(){
         if(fixed){
             return;
@@ -85,6 +90,8 @@ public class Puyo extends Actor{
                 ((GameLevel)owner).setPuyo(row, groundHeight, this);
 
                 fixed = true;
+
+                owner.getAudioManager().playAudio("Puyo Ground");
             }
             else{
                 ((GameLevel)owner).erasePuyo(this);
@@ -99,24 +106,7 @@ public class Puyo extends Actor{
     }
     public void setColor(Color color){
         this.color = color;
-
-        switch(color){
-            case Red:
-                imageComponent.setBitmap(owner.getGraphicsManager().getBitmap("Red Puyo"));
-                break;
-            case Green:
-                imageComponent.setBitmap(owner.getGraphicsManager().getBitmap("Green Puyo"));
-                break;
-            case Blue:
-                imageComponent.setBitmap(owner.getGraphicsManager().getBitmap("Blue Puyo"));
-                break;
-            case Magenta:
-                imageComponent.setBitmap(owner.getGraphicsManager().getBitmap("Magenta Puyo"));
-                break;
-            case Yellow:
-                imageComponent.setBitmap(owner.getGraphicsManager().getBitmap("Yellow Puyo"));
-                break;
-        }
+        imageComponent.setBitmap(owner.getGraphicsManager().getBitmap(color + " Puyo"));
     }
 
     public void resetDropSpeed(){

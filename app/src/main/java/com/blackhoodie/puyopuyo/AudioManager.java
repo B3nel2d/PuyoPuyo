@@ -9,6 +9,7 @@ import android.os.Build;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import androidx.annotation.RequiresApi;
 
@@ -25,7 +26,7 @@ public class AudioManager{
 
     public AudioManager(Level owner){
         this.owner = owner;
-        audios = new ArrayList<Audio>();
+        audios = new CopyOnWriteArrayList<Audio>();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -71,9 +72,9 @@ public class AudioManager{
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
-    public void addAudio(String name, String filePath){
+    public void addAudio(String filePath, String name){
         if(audios.stream().anyMatch(target -> target.getName() == name)){
-            System.out.println("ERROR: Cannot add an audio. There is already one with same name.");
+            System.out.println("ERROR: Could not add an audio. There is already one with same name.");
             return;
         }
 

@@ -33,6 +33,9 @@ public class GameLevel extends Level{
 
     private Direction movablePuyoDirection;
 
+    private Puyo.Color[] nextCenterPuyoColors;
+    private Puyo.Color[] nextMovablePuyoColors;
+
     private List<Puyo> puyos;
 
     private Puyo[][] board;
@@ -48,12 +51,30 @@ public class GameLevel extends Level{
     private final int scoreLimit = 99999999;
     private int chainCount;
 
-    private ImageActor backgroundImage;
-    private ImageActor boardImage;
-    private ImageActor coverImage;
+    private float startTimer;
+    private final float timeToStart = 3.0f;
 
+    private float eraseTimer;
+    private final float timeToErase = 1.25f;
+
+    private ImageActor boardImage;
+    private ImageActor backgroundImage;
+    private ImageActor coverImage;
     private TextActor scoreText;
-    private TouchPanel touchPanel;
+
+    private TextActor nextPuyoSignText;
+    private ImageActor[] nextCenterPuyoImages;
+    private ImageActor[] nextMovablePuyoImages;
+
+    private TextActor startTimerCountDownText;
+
+    private ImageActor popupWindow;
+    private TextActor gameOverSignText;
+    private TextActor noticeText;
+
+    private TouchPanel mainPanel;
+    private TouchPanel leftPanel;
+    private TouchPanel rightPanel;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public GameLevel(String name){
@@ -70,21 +91,35 @@ public class GameLevel extends Level{
 
         movablePuyoDirection = null;
 
+        nextCenterPuyoColors = new Puyo.Color[2];
+        nextMovablePuyoColors = new Puyo.Color[2];
+
         puyos = new ArrayList<Puyo>();
         board = new Puyo[boardRowCount][boardColumnCount];
 
         score = 0;
         chainCount = 0;
 
-        graphicsManager.addBitmap("images/background.png", "Background");
-        graphicsManager.addBitmap("images/board.png", "Board");
+        startTimer = timeToStart;
+        eraseTimer = timeToErase;
+
+        nextCenterPuyoImages = new ImageActor[2];
+        nextMovablePuyoImages = new ImageActor[2];
+
+        graphicsManager.addBitmap("images/black-square.png", "Background");
+        graphicsManager.addBitmap("images/white-square.png", "Board");
+        graphicsManager.addBitmap("images/framed-square.png", "Window");
         graphicsManager.addBitmap("images/red-puyo.png", "Red Puyo");
         graphicsManager.addBitmap("images/green-puyo.png", "Green Puyo");
         graphicsManager.addBitmap("images/blue-puyo.png", "Blue Puyo");
         graphicsManager.addBitmap("images/magenta-puyo.png", "Magenta Puyo");
         graphicsManager.addBitmap("images/yellow-puyo.png", "Yellow Puyo");
 
-        skipLoad();
+        audioManager.addAudio("audios/game-start.wav", "Game Start");
+        audioManager.addAudio("audios/puyo-rotate.wav", "Puyo Rotate");
+        audioManager.addAudio("audios/puyo-ground.wav", "Puyo Ground");
+        audioManager.addAudio("audios/puyo-erase.wav", "Puyo Erase");
+        audioManager.addAudio("audios/game-over.wav", "Game Over");
 
         backgroundImage = new ImageActor(this, "Background Image");
         backgroundImage.getUITransformComponent().setSize(Game.getInstance().getScreenSize());
@@ -94,9 +129,9 @@ public class GameLevel extends Level{
 
         boardImage = new ImageActor(this, "Board Image");
         boardImage.getUITransformComponent().setSize(boardSize);
-        boardImage.getUITransformComponent().setPosition(Game.getInstance().getScreenSize().x / 2.0f, Game.getInstance().getScreenSize().y / 2.0f + -50);
+        boardImage.getUITransformComponent().setPosition(Game.getInstance().getScreenSize().x / 2.0f, Game.getInstance().getScreenSize().y / 2.0f - 50);
         boardImage.getImageComponent().setBitmap(graphicsManager.getBitmap("Board"));
-        boardImage.getImageComponent().setDrawOrder(0);
+        boardImage.getImageComponent().setDrawOrder(1);
 
         coverImage = new ImageActor(this, "Cover Image");
         coverImage.getUITransformComponent().setSize(boardSize.x, Puyo.size.y * 2);
@@ -105,26 +140,104 @@ public class GameLevel extends Level{
         coverImage.getImageComponent().setDrawOrder(3);
 
         scoreText = new TextActor(this, "Score Text");
-        scoreText.getUITransformComponent().setPosition(boardImage.getUITransformComponent().getPosition().x - 100, boardImage.getUITransformComponent().getPosition().y + boardImage.getUITransformComponent().getSize().y / 2 + 50);
+        scoreText.getUITransformComponent().setPosition(boardImage.getUITransformComponent().getPosition().x, boardImage.getUITransformComponent().getPosition().y + boardSize.y / 2.0f + 30);
         scoreText.getTextComponent().setText("SCORE: " + score);
         scoreText.getTextComponent().getPaint().setTextSize(50);
         scoreText.getTextComponent().getPaint().setColor(Color.WHITE);
         scoreText.getTextComponent().setDrawOrder(1);
 
-        touchPanel = new TouchPanel(this, "Touch Panel");
-        touchPanel.getUiTransformComponent().setSize(Game.getInstance().getScreenSize());
-        touchPanel.getUiTransformComponent().setPosition(Game.getInstance().getScreenSize().multiply(0.5f));
-        touchPanel.getInteractableComponent().addTask(InteractableComponent.TouchAction.DoubleTap, this::rotatePuyoClockwise);
-        touchPanel.getInteractableComponent().addTask(InteractableComponent.TouchAction.LongPress, this::dropPuyo);
-        touchPanel.getInteractableComponent().setFlickTask(this::onFling);
+        nextPuyoSignText = new TextActor(this, "Next Puyo Sign Text");
+        nextPuyoSignText.getUITransformComponent().setPosition(990, 250);
+        nextPuyoSignText.getTextComponent().setText("NEXT");
+        nextPuyoSignText.getTextComponent().getPaint().setTextSize(50);
+        nextPuyoSignText.getTextComponent().getPaint().setColor(Color.WHITE);
+        nextPuyoSignText.getTextComponent().setDrawOrder(1);
 
-        startGame();
+        nextCenterPuyoImages[1] = new ImageActor(this, "Next Center Puyo Image 2");
+        nextCenterPuyoImages[1].getUITransformComponent().setSize(Puyo.size);
+        nextCenterPuyoImages[1].getUITransformComponent().setPosition(nextPuyoSignText.getUITransformComponent().getPosition().add(0, 100 + Puyo.size.y));
+        nextCenterPuyoImages[1].getImageComponent().setDrawOrder(1);
+
+        nextMovablePuyoImages[1] = new ImageActor(this, "Next Movable Puyo Image 2");
+        nextMovablePuyoImages[1].getUITransformComponent().setSize(Puyo.size);
+        nextMovablePuyoImages[1].getUITransformComponent().setPosition(nextPuyoSignText.getUITransformComponent().getPosition().add(0, 100));
+        nextMovablePuyoImages[1].getImageComponent().setDrawOrder(1);
+
+        nextCenterPuyoImages[0] = new ImageActor(this, "Next Center Puyo Image 1");
+        nextCenterPuyoImages[0].getUITransformComponent().setSize(Puyo.size);
+        nextCenterPuyoImages[0].getUITransformComponent().setPosition(nextCenterPuyoImages[1].getUITransformComponent().getPosition().add(100, 300));
+        nextCenterPuyoImages[0].getImageComponent().setDrawOrder(1);
+
+        nextMovablePuyoImages[0] = new ImageActor(this, "Next Movable Puyo Image 1");
+        nextMovablePuyoImages[0].getUITransformComponent().setSize(Puyo.size);
+        nextMovablePuyoImages[0].getUITransformComponent().setPosition(nextCenterPuyoImages[0].getUITransformComponent().getPosition().add(0, -Puyo.size.y));
+        nextMovablePuyoImages[0].getImageComponent().setDrawOrder(1);
+
+        startTimerCountDownText = new TextActor(this, "Start Timer Count Down Text");
+        startTimerCountDownText.getUITransformComponent().setPosition(Game.getInstance().getScreenSize().multiply(0.5f).subtract(0, 500));
+        startTimerCountDownText.getTextComponent().getPaint().setTextSize(100);
+        startTimerCountDownText.getTextComponent().getPaint().setColor(Color.BLACK);
+        startTimerCountDownText.getTextComponent().setDrawOrder(4);
+
+        popupWindow = new ImageActor(this, "Popup Window");
+        popupWindow.getUITransformComponent().setSize(800, 500);
+        popupWindow.getUITransformComponent().setPosition(Game.getInstance().getScreenSize().multiply(0.5f));
+        popupWindow.getImageComponent().setBitmap(graphicsManager.getBitmap("Window"));
+        popupWindow.getImageComponent().setDrawOrder(4);
+
+        gameOverSignText = new TextActor(this, "Game Over Sign Text");
+        gameOverSignText.getUITransformComponent().setPosition(popupWindow.getUITransformComponent().getPosition().subtract(0, 100));
+        gameOverSignText.getTextComponent().setText("-GAME OVER-");
+        gameOverSignText.getTextComponent().getPaint().setTextSize(100);
+        gameOverSignText.getTextComponent().getPaint().setColor(Color.BLACK);
+        gameOverSignText.getTextComponent().setDrawOrder(5);
+
+        noticeText = new TextActor(this, "Notice Text");
+        noticeText.getUITransformComponent().setPosition(popupWindow.getUITransformComponent().getPosition().add(0, 100));
+        noticeText.getTextComponent().setText("Tap screen to return to title");
+        noticeText.getTextComponent().getPaint().setTextSize(50);
+        noticeText.getTextComponent().getPaint().setColor(Color.BLACK);
+        noticeText.getTextComponent().setDrawOrder(5);
+
+        popupWindow.addChild(gameOverSignText);
+        popupWindow.addChild(noticeText);
+        popupWindow.setState(Actor.State.Inactive);
+
+        mainPanel = new TouchPanel(this, "Touch Panel");
+        mainPanel.getUiTransformComponent().setSize(Game.getInstance().getScreenSize());
+        mainPanel.getUiTransformComponent().setPosition(Game.getInstance().getScreenSize().multiply(0.5f));
+        mainPanel.getInteractableComponent().addTask(InteractableComponent.TouchAction.LongPress, this::dropPuyo);
+        mainPanel.getInteractableComponent().addTask(InteractableComponent.TouchAction.Down, this::goBackToTitle);
+        mainPanel.getInteractableComponent().setFlickTask(this::onFling);
+
+        leftPanel = new TouchPanel(this, "Left Panel");
+        leftPanel.getUiTransformComponent().setSize(Game.getInstance().getScreenSize().multiply(0.5f, 1.0f));
+        leftPanel.getUiTransformComponent().setPosition(Game.getInstance().getScreenSize().multiply(0.5f).subtract(Game.getInstance().getScreenSize().multiply(0.25f).x, 0));
+        leftPanel.getInteractableComponent().addTask(InteractableComponent.TouchAction.SingleTapUp, this::rotatePuyoCounterClockwise);
+
+        rightPanel = new TouchPanel(this, "Right Panel");
+        rightPanel.getUiTransformComponent().setSize(Game.getInstance().getScreenSize().multiply(0.5f, 1.0f));
+        rightPanel.getUiTransformComponent().setPosition(Game.getInstance().getScreenSize().multiply(0.5f).add(Game.getInstance().getScreenSize().multiply(0.25f).x, 0));
+        rightPanel.getInteractableComponent().addTask(InteractableComponent.TouchAction.SingleTapUp, this::rotatePuyoClockwise);
+
+        updateNextPuyos();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void update(){
         switch(currentPhase){
+            case Start:
+                startTimer -= Game.getInstance().getFrameDeltaTime();
+                if(0 <= startTimer){
+                    updateStartTimerCountDownText(String.valueOf((int)Math.ceil(startTimer)));
+                }
+                else{
+                    startTimerCountDownText.setState(Actor.State.Inactive);
+                    startGame();
+                }
+
+                break;
             case Control:
                 if(centerPuyo.isFixed() || movablePuyo.isFixed()){
                     dropAllPuyos();
@@ -137,7 +250,11 @@ public class GameLevel extends Level{
                         finishGame();
                     }
                     else{
-                        eraseAllPuyos();
+                        eraseTimer -= Game.getInstance().getFrameDeltaTime();
+                        if(eraseTimer < 0){
+                            eraseAllPuyos();
+                            eraseTimer = timeToErase;
+                        }
                     }
                 }
 
@@ -145,8 +262,38 @@ public class GameLevel extends Level{
         }
     }
 
+    private void updateStartTimerCountDownText(String text){
+        startTimerCountDownText.getTextComponent().setText(text);
+    }
+
+    private void updateNextPuyos(){
+        if(nextCenterPuyoColors[0] == null){
+            nextCenterPuyoColors[1] = Puyo.Color.values()[new Random().nextInt(Puyo.Color.values().length)];
+        }
+        else{
+            nextCenterPuyoColors[1] = nextCenterPuyoColors[0];
+        }
+        nextCenterPuyoImages[1].getImageComponent().setBitmap(graphicsManager.getBitmap(nextCenterPuyoColors[1] + " Puyo"));
+
+        if(nextMovablePuyoColors[0] == null){
+            nextMovablePuyoColors[1] = Puyo.Color.values()[new Random().nextInt(Puyo.Color.values().length)];
+        }
+        else{
+            nextMovablePuyoColors[1] = nextMovablePuyoColors[0];
+        }
+        nextMovablePuyoImages[1].getImageComponent().setBitmap(graphicsManager.getBitmap(nextMovablePuyoColors[1] + " Puyo"));
+
+        nextCenterPuyoColors[0] = Puyo.Color.values()[new Random().nextInt(Puyo.Color.values().length)];
+        nextCenterPuyoImages[0].getImageComponent().setBitmap(graphicsManager.getBitmap(nextCenterPuyoColors[0] + " Puyo"));
+
+        nextMovablePuyoColors[0] = Puyo.Color.values()[new Random().nextInt(Puyo.Color.values().length)];
+        nextMovablePuyoImages[0].getImageComponent().setBitmap(graphicsManager.getBitmap(nextMovablePuyoColors[0] + " Puyo"));
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
     private void startGame(){
         spawnPuyo();
+        audioManager.playAudio("Game Start");
     }
 
     private void spawnPuyo(){
@@ -155,16 +302,18 @@ public class GameLevel extends Level{
         centerPuyo = new Puyo(this, "Puyo");
         puyos.add(centerPuyo);
         centerPuyo.getUiTransformComponent().setPosition(getPositionFromCoordinate(2, 0));
-        centerPuyo.setColor(Puyo.Color.values()[new Random().nextInt(Puyo.Color.values().length)]);
-        centerPuyo.getImageComponent().setDrawOrder(1);
+        centerPuyo.setColor(nextCenterPuyoColors[1]);
+        centerPuyo.getImageComponent().setDrawOrder(2);
 
         movablePuyo = new Puyo(this, "Puyo");
         puyos.add(movablePuyo);
         movablePuyo.getUiTransformComponent().setPosition(getPositionFromCoordinate(2, -1));
-        movablePuyo.setColor(Puyo.Color.values()[new Random().nextInt(Puyo.Color.values().length)]);
-        movablePuyo.getImageComponent().setDrawOrder(1);
+        movablePuyo.setColor(nextMovablePuyoColors[1]);
+        movablePuyo.getImageComponent().setDrawOrder(2);
 
         movablePuyoDirection = Direction.Up;
+
+        updateNextPuyos();
     }
 
     public void dropAllPuyos(){
@@ -205,8 +354,21 @@ public class GameLevel extends Level{
         return false;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     private void finishGame(){
+        currentPhase = Phase.GameOver;
 
+        popupWindow.setState(Actor.State.Active);
+        audioManager.playAudio("Game Over");
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    private void goBackToTitle(){
+        if(currentPhase != Phase.GameOver){
+            return;
+        }
+
+        Game.getInstance().loadLevel("Title Level");
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
@@ -256,6 +418,8 @@ public class GameLevel extends Level{
                 erasePuyo(puyo);
             }
 
+            audioManager.playAudio("Puyo Erase");
+
             dropAllPuyos();
         }
         else{
@@ -264,6 +428,7 @@ public class GameLevel extends Level{
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public void erasePuyo(Puyo puyo){
         if(puyo == null){
             return;
@@ -339,6 +504,7 @@ public class GameLevel extends Level{
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     private void rotatePuyoClockwise(){
         if(currentPhase != Phase.Control){
             return;
@@ -347,40 +513,46 @@ public class GameLevel extends Level{
             return;
         }
 
+        boolean rotated = false;
         switch(movablePuyoDirection){
             case Up:
                 if(adjacentSpaceExists(centerPuyo, Direction.Right)){
                     movablePuyo.getUiTransformComponent().translate(Puyo.size.x, Puyo.size.y);
 
                     movablePuyoDirection = Direction.Right;
+                    rotated = true;
                 }
                 else if(adjacentSpaceExists(centerPuyo, Direction.Left)){
                     centerPuyo.getUiTransformComponent().translate(-Puyo.size.x, 0);
                     movablePuyo.getUiTransformComponent().translate(0, Puyo.size.y);
 
                     movablePuyoDirection = Direction.Right;
+                    rotated = true;
                 }
 
                 break;
             case Right:
-                if(adjacentSpaceExists(centerPuyo, Direction.Down)){
+                if(adjacentSpaceExists(centerPuyo, Direction.Down) && adjacentSpaceExists(movablePuyo, Direction.Down)){
                     movablePuyo.getUiTransformComponent().translate(-Puyo.size.x, Puyo.size.y);
 
                     movablePuyoDirection = Direction.Down;
+                    rotated = true;
                 }
 
                 break;
             case Down:
-                if(adjacentSpaceExists(centerPuyo, Direction.Left)){
+                if(adjacentSpaceExists(centerPuyo, Direction.Left) && adjacentSpaceExists(movablePuyo, Direction.Left)){
                     movablePuyo.getUiTransformComponent().translate(-Puyo.size.x, -Puyo.size.y);
 
                     movablePuyoDirection = Direction.Left;
+                    rotated = true;
                 }
                 else if(adjacentSpaceExists(centerPuyo, Direction.Right)){
                     centerPuyo.getUiTransformComponent().translate(Puyo.size.x, 0);
                     movablePuyo.getUiTransformComponent().translate(0, -Puyo.size.y);
 
                     movablePuyoDirection = Direction.Left;
+                    rotated = true;
                 }
 
                 break;
@@ -388,8 +560,79 @@ public class GameLevel extends Level{
                 movablePuyo.getUiTransformComponent().translate(Puyo.size.x, -Puyo.size.y);
 
                 movablePuyoDirection = Direction.Up;
+                rotated = true;
 
                 break;
+        }
+
+        if(rotated){
+            audioManager.playAudio("Puyo Rotate");
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    private void rotatePuyoCounterClockwise(){
+        if(currentPhase != Phase.Control){
+            return;
+        }
+        if(centerPuyo == null || movablePuyo == null){
+            return;
+        }
+
+        boolean rotated = false;
+        switch(movablePuyoDirection){
+            case Up:
+                if(adjacentSpaceExists(centerPuyo, Direction.Left)){
+                    movablePuyo.getUiTransformComponent().translate(-Puyo.size.x, Puyo.size.y);
+
+                    movablePuyoDirection = Direction.Left;
+                    rotated = true;
+                }
+                else if(adjacentSpaceExists(centerPuyo, Direction.Right)){
+                    centerPuyo.getUiTransformComponent().translate(Puyo.size.x, 0);
+                    movablePuyo.getUiTransformComponent().translate(0, Puyo.size.y);
+
+                    movablePuyoDirection = Direction.Left;
+                    rotated = true;
+                }
+
+                break;
+            case Left:
+                if(adjacentSpaceExists(centerPuyo, Direction.Down) && adjacentSpaceExists(movablePuyo, Direction.Down)){
+                    movablePuyo.getUiTransformComponent().translate(Puyo.size.x, Puyo.size.y);
+
+                    movablePuyoDirection = Direction.Down;
+                    rotated = true;
+                }
+
+                break;
+            case Down:
+                if(adjacentSpaceExists(centerPuyo, Direction.Right) && adjacentSpaceExists(movablePuyo, Direction.Right)){
+                    movablePuyo.getUiTransformComponent().translate(Puyo.size.x, -Puyo.size.y);
+
+                    movablePuyoDirection = Direction.Right;
+                    rotated = true;
+                }
+                else if(adjacentSpaceExists(centerPuyo, Direction.Left)){
+                    centerPuyo.getUiTransformComponent().translate(-Puyo.size.x, 0);
+                    movablePuyo.getUiTransformComponent().translate(0, -Puyo.size.y);
+
+                    movablePuyoDirection = Direction.Right;
+                    rotated = true;
+                }
+
+                break;
+            case Right:
+                movablePuyo.getUiTransformComponent().translate(-Puyo.size.x, -Puyo.size.y);
+
+                movablePuyoDirection = Direction.Up;
+                rotated = true;
+
+                break;
+        }
+
+        if(rotated){
+            audioManager.playAudio("Puyo Rotate");
         }
     }
 
@@ -494,6 +737,7 @@ public class GameLevel extends Level{
         scoreText.getTextComponent().setText("SCORE: " + score);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void dispose(){
         super.dispose();
@@ -550,20 +794,6 @@ public class GameLevel extends Level{
     }
     public void setPuyo(int x, int y, Puyo puyo){
         this.setPuyo(new Vector2D(x, y), puyo);
-    }
-
-    public Puyo getCenterPuyo(){
-        return centerPuyo;
-    }
-    public void setCenterPuyo(Puyo puyo){
-        centerPuyo = puyo;
-    }
-
-    public Puyo getMovablePuyo(){
-        return movablePuyo;
-    }
-    public void setMovablePuyo(Puyo puyo){
-        movablePuyo = puyo;
     }
 
 }

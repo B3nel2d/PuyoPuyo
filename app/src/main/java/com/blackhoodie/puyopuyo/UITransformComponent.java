@@ -70,12 +70,4 @@ public class UITransformComponent extends Component{
         }
     }
 
-    public Vector2D getMinimumPoint(){
-        return new Vector2D(position.x - size.x / 2.0f, position.y - size.y / 2.0f);
-    }
-
-    public Vector2D getMaximumPoint(){
-        return new Vector2D(position.x + size.x / 2.0f, position.y + size.y / 2.0f);
-    }
-
 }

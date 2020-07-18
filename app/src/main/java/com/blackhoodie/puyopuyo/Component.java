@@ -7,9 +7,9 @@ abstract class Component{
         Inactive
     }
 
-    private Actor owner;
-    private State state;
-    private int updateOrder;
+    protected Actor owner;
+    protected State state;
+    protected int updateOrder;
 
     public Component(Actor owner, int updateOrder){
         this.owner = owner;
@@ -30,6 +30,9 @@ abstract class Component{
 
     public State getState(){
         return state;
+    }
+    public void setState(State state){
+        this.state = state;
     }
 
     public int getUpdateOrder(){

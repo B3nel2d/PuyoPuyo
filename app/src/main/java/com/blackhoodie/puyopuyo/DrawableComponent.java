@@ -25,6 +25,7 @@ abstract class DrawableComponent extends Component{
     }
     public void setDrawOrder(int drawOrder){
         this.drawOrder = drawOrder;
+        owner.getOwner().getGraphicsManager().sortDrawables();
     }
 
     public boolean isVisible(){

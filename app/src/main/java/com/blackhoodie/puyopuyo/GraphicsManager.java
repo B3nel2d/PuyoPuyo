@@ -4,13 +4,16 @@ import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.os.Build;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import androidx.annotation.RequiresApi;
 
 public class GraphicsManager{
 
@@ -30,8 +33,8 @@ public class GraphicsManager{
     }
 
     public void initialize(){
-        drawables = new ArrayList<DrawableComponent>();
-        pendingDrawables = new ArrayList<DrawableComponent>();
+        drawables = new CopyOnWriteArrayList<DrawableComponent>();
+        pendingDrawables = new CopyOnWriteArrayList<DrawableComponent>();
 
         bitmaps = new HashMap<String, Bitmap>();
 
@@ -44,13 +47,15 @@ public class GraphicsManager{
         }
         else{
             drawables.add(drawable);
-            Collections.sort(drawables, (drawable1, drawable2) -> drawable1.getDrawOrder() - drawable2.getDrawOrder());
+            sortDrawables();
         }
     }
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public void removeDrawable(DrawableComponent drawable){
-        if(drawables.contains(drawable)){
-            drawables.remove(drawable);
-        }
+        drawables.removeIf(target -> target == drawable);
+    }
+    public void sortDrawables(){
+        Collections.sort(drawables, new DrawableComparator());
     }
 
     public void addBitmap(String filePath, String name){
@@ -72,6 +77,7 @@ public class GraphicsManager{
     }
     public Bitmap getBitmap(String name){
         if(!bitmaps.containsKey(name)){
+            System.out.println("Could not find bitmap(" + name + ").");
             return null;
         }
 
@@ -88,7 +94,7 @@ public class GraphicsManager{
     public void render(Canvas canvas){
         rendering = true;
         for(DrawableComponent drawable : drawables){
-            if(drawable.isVisible()){
+            if(drawable.getOwner().getState() == Actor.State.Active && drawable.isVisible()){
                 drawable.draw(canvas);
             }
         }
@@ -96,7 +102,7 @@ public class GraphicsManager{
 
         for(DrawableComponent drawable : pendingDrawables){
             drawables.add(drawable);
-            Collections.sort(drawables, (drawable1, drawable2) -> drawable1.getDrawOrder() - drawable2.getDrawOrder());
+            sortDrawables();
         }
         pendingDrawables.clear();
     }

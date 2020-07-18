@@ -22,7 +22,7 @@ public class GameSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         Game.getInstance().setContext(context);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder){
         thread = new Thread(this);

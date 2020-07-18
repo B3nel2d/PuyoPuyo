@@ -4,6 +4,9 @@ import android.os.Build;
 
 import androidx.annotation.RequiresApi;
 
+/**
+ *
+ */
 public class Puyo extends Actor{
 
     public enum Color{

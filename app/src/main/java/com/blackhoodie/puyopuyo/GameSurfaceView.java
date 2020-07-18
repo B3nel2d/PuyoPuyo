@@ -9,10 +9,18 @@ import android.view.SurfaceView;
 
 import androidx.annotation.RequiresApi;
 
+/**
+ * 画面描画を担うクラス
+ */
 public class GameSurfaceView extends SurfaceView implements SurfaceHolder.Callback, Runnable{
 
+    /** スレッド */
     private Thread thread;
 
+    /**
+     * コンストラクタ
+     * @param context
+     */
     public GameSurfaceView(Context context){
         super(context);
         getHolder().addCallback(this);
@@ -55,6 +63,10 @@ public class GameSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         }
     }
 
+    /**
+     * ゲーム画面の描画を行う（GameクラスへCanvasを渡す）
+     * @param surfaceHolder
+     */
     private void render(SurfaceHolder surfaceHolder){
         Canvas canvas = surfaceHolder.lockCanvas();
         if(canvas == null){

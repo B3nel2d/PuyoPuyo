@@ -2,6 +2,9 @@ package com.blackhoodie.puyopuyo;
 
 import java.util.Comparator;
 
+/**
+ * ドローアブルの描画順ソート用のComoparator
+ */
 public class DrawableComparator implements Comparator<DrawableComponent>{
 
     public int compare(DrawableComponent drawable1, DrawableComponent drawable2){
